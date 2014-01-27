@@ -176,16 +176,16 @@ public class LoadHubOrLinkData extends BaseStepData implements StepDataInterface
 
 		for (int j = 0; j < meta.getBufferSize(); j++) {
 			endClause  += " ( ";
-			for (int i = 0; i < meta.getKeyCol().length; i++) {
-				endClause += dbMeta.quoteField(meta.getKeyCol()[i]) + " = ? ";
-				if (i < meta.getKeyCol().length-1){
+			for (int i = 0; i < meta.getCols().length; i++) {
+				endClause += dbMeta.quoteField(meta.getCols()[i]) + " = ? ";
+				if (i < meta.getCols().length-1){
 					endClause  += " AND ";
 				}
 				// add Meta of key(s) col 
 				if (j == 0) {
-					nkcols += ", " + dbMeta.quoteField(meta.getKeyCol()[i]);
+					nkcols += ", " + dbMeta.quoteField(meta.getCols()[i]);
 					int tmpMetatype = inputRowMeta.getValueMeta(keysRowIdx[i]).getType();
-					lookupRowMeta.addValueMeta(i, new ValueMeta(meta.getKeyCol()[i], tmpMetatype));
+					lookupRowMeta.addValueMeta(i, new ValueMeta(meta.getCols()[i], tmpMetatype));
 				}
 			}
 			endClause  += " ) " + Const.CR;
@@ -232,10 +232,10 @@ public class LoadHubOrLinkData extends BaseStepData implements StepDataInterface
 		String sqlValues = Const.CR + " VALUES (";
 	
 		//Handle all keys
-		for (int i = 0; i < meta.getKeyCol().length; i++) {
-			sqlIns += db.getDatabaseMeta().quoteField(meta.getKeyCol()[i]);
+		for (int i = 0; i < meta.getCols().length; i++) {
+			sqlIns += db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 			sqlValues += "?";	
-			if (i < meta.getKeyCol().length-1){
+			if (i < meta.getCols().length-1){
 				sqlIns += ", ";
 				sqlValues += ", ";
 			}
@@ -317,13 +317,13 @@ public class LoadHubOrLinkData extends BaseStepData implements StepDataInterface
 	
 	
 	public void initKeysRowIdx(LoadLinkMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {
-		keysRowIdx = new int[meta.getKeyField().length];
-		for (int i = 0; i < meta.getKeyField().length; i++) {
-			keysRowIdx[i] = inputRowMeta.indexOfValue(meta.getKeyField()[i]);
+		keysRowIdx = new int[meta.getFields().length];
+		for (int i = 0; i < meta.getFields().length; i++) {
+			keysRowIdx[i] = inputRowMeta.indexOfValue(meta.getFields()[i]);
 			if (keysRowIdx[i] < 0) {
 				// couldn't find field!
 				throw new KettleStepException(BaseMessages.getString(PKG,
-						"Load??Hub.Exception.FieldNotFound", meta.getKeyField()[i]));
+						"Load??Hub.Exception.FieldNotFound", meta.getFields()[i]));
 			}
 		}
 	}

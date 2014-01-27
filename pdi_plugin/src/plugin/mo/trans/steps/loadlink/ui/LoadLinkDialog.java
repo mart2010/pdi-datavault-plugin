@@ -45,6 +45,7 @@ import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.combinationlookup.CombinationLookupMeta;
+import org.pentaho.di.trans.steps.googleanalytics.GaInputStepMeta;
 import org.pentaho.di.ui.core.database.dialog.DatabaseExplorerDialog;
 import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
@@ -65,6 +66,7 @@ import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
  * Each widget consists of 1- its label and 2- the entry widget itself
  * FormData objects define the anchor points of the widgets
  * 
+ * TODO: check out GoogleAnalytics for good UI design
  */
 
 public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterface {
@@ -238,7 +240,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		fdSchema.right = new FormAttachment(wbSchema, -margin);
 		wSchema.setLayoutData(fdSchema);
 
-		// Hub Table line...
+		// Table line...
 		wlLinkTable = new Label(shell, SWT.RIGHT);
 		wlLinkTable.setText(BaseMessages.getString(PKG, "LoadLinkDialog.Target.Label"));
 		props.setLook(wlLinkTable);
@@ -297,13 +299,16 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		wlKey.setLayoutData(fdlKey);
 
 		int nrKeyCols = 2;
-		int nrKeyRows = (inputMeta.getKeyField() != null ? inputMeta.getKeyField().length : 1);
+		int nrKeyRows = (inputMeta.getFields() != null ? inputMeta.getFields().length : 1);
 
-		ciKey = new ColumnInfo[nrKeyCols];
+		ciKey = new ColumnInfo[nrKeyCols];		
 		ciKey[0] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.TableColumn"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
 		ciKey[1] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.FieldInStream"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
+		ciKey[2] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.FieldType"),
+				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { LoadLinkMeta.IDENTIFYING_KEY, LoadLinkMeta.OTHER_TYPE }, false);
+		
 		// attach the tableFieldColumns List to the widget
 		tableFieldColumns.add(ciKey[0]);
 		wKey = new TableView(transMeta, shell, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL
@@ -711,14 +716,14 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 		wBatchSize.setText("" + inputMeta.getBufferSize());
 
-		if (inputMeta.getKeyField() != null) {
-			for (int i = 0; i < inputMeta.getKeyField().length; i++) {
+		if (inputMeta.getFields() != null) {
+			for (int i = 0; i < inputMeta.getFields().length; i++) {
 				TableItem item = wKey.table.getItem(i);
-				if (inputMeta.getKeyCol()[i] != null) {
-					item.setText(1, inputMeta.getKeyCol()[i]);
+				if (inputMeta.getCols()[i] != null) {
+					item.setText(1, inputMeta.getCols()[i]);
 				}
-				if (inputMeta.getKeyField()[i] != null) {
-					item.setText(2, inputMeta.getKeyField()[i]);
+				if (inputMeta.getFields()[i] != null) {
+					item.setText(2, inputMeta.getFields()[i]);
 				}
 			}
 		}
@@ -798,8 +803,8 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		logDebug("Found nb of Keys=", String.valueOf(nrkeys));
 		for (int i = 0; i < nrkeys; i++) {
 			TableItem item = wKey.getNonEmpty(i);
-			in.getKeyCol()[i] = item.getText(1);
-			in.getKeyField()[i] = item.getText(2);
+			in.getCols()[i] = item.getText(1);
+			in.getFields()[i] = item.getText(2);
 		}
 
 		if (wAutoinc.getSelection()) {

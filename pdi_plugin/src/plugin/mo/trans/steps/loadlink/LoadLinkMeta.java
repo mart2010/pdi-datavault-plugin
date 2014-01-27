@@ -50,6 +50,10 @@ import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 	private static Class<?> PKG = CompositeValues.class;
 	
+	public static String IDENTIFYING_KEY = "Identifying Key";
+	public static String OTHER_TYPE = "Other Attribute";
+	
+	
 	private DatabaseMeta databaseMeta;
 
 	private String schemaName; 
@@ -59,20 +63,20 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 	private int bufferSize;
 
 	
-	// key field(s) used for look up a link?
-	private String[] keyField;
+	// key fields used for look up a link?
+	private String[] fields;
 
-	// col(s) holding look-up key(s) in link table
-	private String[] keyCol;
+	// cols holding look-up keys in link table
+	private String[] cols;
+
+	// type (identifying key or other)
+	private String[] attType;
 
 	// column holding the PKey of Link
 	private String primaryKeyCol;
 	//key added in output stream to avoid name conflict 
 	private String newKeyFieldName;
-	
-	// type (identifying key or other)
-	private String[] attType;
-		
+			
 	private String creationDateCol;
 	
 	//method used to generate keys
@@ -115,16 +119,18 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 		allocateKeyArray(nrkeys);
 
 		for (int i = 1; i < nrkeys; i++) {
-			keyField[i-1] = "key" + i;
-			keyCol[i-1] = "keylookup" + i;
+			fields[i-1] = "key" + i;
+			cols[i-1] = "keylookup" + i;
+			attType[i-1] = LoadLinkMeta.IDENTIFYING_KEY;
 		}
 		
 		
 	}
 
 	public void allocateKeyArray(int nrkeys) {
-		keyField = new String[nrkeys];
-		keyCol = new String[nrkeys];
+		fields = new String[nrkeys];
+		cols = new String[nrkeys];
+		attType = new String[nrkeys];
 	}
 
 	
@@ -296,13 +302,14 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 		public Object clone() {
 			LoadLinkMeta retval = (LoadLinkMeta) super.clone();
 
-			int nrkeys = keyField.length;
+			int nrkeys = fields.length;
 			retval.allocateKeyArray(nrkeys);
 
 			// Deep copy for Array
 			for (int i = 0; i < nrkeys; i++) {
-				retval.keyField[i] = keyField[i];
-				retval.keyCol[i] = keyCol[i];
+				retval.fields[i] = fields[i];
+				retval.cols[i] = cols[i];
+				retval.attType[i] = attType[i];
 			}		
 			return retval;
 		}
@@ -392,23 +399,23 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 		}
 
 
-		public String[] getKeyField() {
-			return keyField;
+		public String[] getFields() {
+			return fields;
 		}
 
 
 		public void setKeyField(String[] keyField) {
-			this.keyField = keyField;
+			this.fields = keyField;
 		}
 
 
-		public String[] getKeyCol() {
-			return keyCol;
+		public String[] getCols() {
+			return cols;
 		}
 
 
 		public void setKeyCol(String[] keyCol) {
-			this.keyCol = keyCol;
+			this.cols = keyCol;
 		}
 
 
@@ -445,6 +452,16 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 
 		public void setSequenceName(String sequenceName) {
 			this.sequenceName = sequenceName;
+		}
+
+
+		public String[] getAttType() {
+			return attType;
+		}
+
+
+		public void setAttType(String[] attType) {
+			this.attType = attType;
 		}
 	
 		
