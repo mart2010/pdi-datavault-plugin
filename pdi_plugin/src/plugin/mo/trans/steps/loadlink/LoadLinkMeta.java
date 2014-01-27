@@ -70,6 +70,9 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 	//key added in output stream to avoid name conflict 
 	private String newKeyFieldName;
 	
+	// type (identifying key or other)
+	private String[] attType;
+		
 	private String creationDateCol;
 	
 	//method used to generate keys
