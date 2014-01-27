@@ -1,0 +1,13 @@
+# ignore all bin directories
+# matches "bin" in any subfolder
+bin/
+
+# ignore all dist directories
+dist/
+
+# ignore all lib* directories
+lib*/
+
+# ignore all files ending with ~
+*~
+
