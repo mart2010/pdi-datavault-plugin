@@ -791,8 +791,8 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 				if (null != schemas && schemas.length > 0) {
 					schemas = Const.sortStrings(schemas);
 					EnterSelectionDialog dialog = new EnterSelectionDialog(shell, schemas, BaseMessages.getString(PKG,
-							"LoadHubDialog.AvailableSchemas.Title", wConnection.getText()), BaseMessages.getString(PKG,
-							"LoadHubDialog.AvailableSchemas.Message", wConnection.getText()));
+							"LoadDialog.AvailableSchemas.Title", wConnection.getText()), BaseMessages.getString(PKG,
+							"LoadDialog.AvailableSchemas.Message", wConnection.getText()));
 					String d = dialog.open();
 					if (d != null) {
 						wSchema.setText(Const.NVL(d, ""));
@@ -853,7 +853,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 						});
 			}
 		} catch (KettleException ke) {
-			new ErrorDialog(shell, BaseMessages.getString(PKG, "LoadHubDialog.UnableToGetFieldsError.DialogTitle"),
+			new ErrorDialog(shell, BaseMessages.getString(PKG, "LoadDialog.UnableToGetFieldsError.DialogTitle"),
 					BaseMessages.getString(PKG, "LoadDialog.UnableToGetFieldsError.DialogMessage"), ke);
 		}
 	}

@@ -305,7 +305,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			if (satAttsRowIdx[i] < 0) {
 				// couldn't find field!
 				throw new KettleStepException(BaseMessages.getString(PKG,
-						"LoadHub.Exception.FieldNotFound", meta.getAttField()[i]));
+						"Load.Exception.FieldNotFound", meta.getAttField()[i]));
 			} 
 			if (meta.getAttType()[i].equals(LoadSatMeta.ATTRIBUTE_SURR_FK)) {
 				posFkInRow = outputRowMeta.indexOfValue(meta.getAttField()[i]);

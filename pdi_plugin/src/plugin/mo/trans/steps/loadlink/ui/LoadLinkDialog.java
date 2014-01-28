@@ -287,7 +287,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		wBatchSize.setLayoutData(fdBatch);
 
 		//
-		// The Lookup fields: the link keys
+		// The fields: keys + none-keys
 		//
 		wlKey = new Label(shell, SWT.NONE);
 		wlKey.setText(BaseMessages.getString(PKG, "LoadLinkDialog.Keyfields.Label"));
@@ -298,8 +298,8 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		fdlKey.right = new FormAttachment(100, 0);
 		wlKey.setLayoutData(fdlKey);
 
-		int nrKeyCols = 2;
-		int nrKeyRows = (inputMeta.getFields() != null ? inputMeta.getFields().length : 1);
+		int nrKeyCols = 3;
+		int nrKeyRows = (inputMeta.getAllFields() != null ? inputMeta.getAllFields().length : 1);
 
 		ciKey = new ColumnInfo[nrKeyCols];		
 		ciKey[0] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.TableColumn"),
@@ -716,23 +716,27 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 		wBatchSize.setText("" + inputMeta.getBufferSize());
 
-		if (inputMeta.getFields() != null) {
-			for (int i = 0; i < inputMeta.getFields().length; i++) {
+		if (inputMeta.getAllFields() != null) {
+			for (int i = 0; i < inputMeta.getAllFields().length; i++) {
 				TableItem item = wKey.table.getItem(i);
-				if (inputMeta.getCols()[i] != null) {
-					item.setText(1, inputMeta.getCols()[i]);
+				if (inputMeta.getAllCols()[i] != null) {
+					item.setText(1, inputMeta.getAllCols()[i]);
 				}
-				if (inputMeta.getFields()[i] != null) {
-					item.setText(2, inputMeta.getFields()[i]);
+				if (inputMeta.getAllFields()[i] != null) {
+					item.setText(2, inputMeta.getAllFields()[i]);
 				}
+				if (inputMeta.getAttType()[i] != null) {
+					item.setText(3, inputMeta.getAttType()[i]);
+				}
+
 			}
 		}
 
-		if (inputMeta.getPrimaryKeyCol() != null) {
-			wSurrKey.setText(inputMeta.getPrimaryKeyCol());
+		if (inputMeta.getPrimaryKey() != null) {
+			wSurrKey.setText(inputMeta.getPrimaryKey());
 		}
 
-		wCreationDateCol.setText(Const.NVL(inputMeta.getCreationDateCol(), ""));
+		wCreationDateCol.setText(Const.NVL(inputMeta.getColLoadDTS(), ""));
 
 		String surrKeyCreation = inputMeta.getKeyCreation();
 
@@ -797,16 +801,19 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		
 		in.setBufferSize(Const.toInt(wBatchSize.getText(), 0));
 
-		int nrkeys = wKey.nrNonEmpty();
-		in.allocateKeyArray(nrkeys);
+		int nb = wKey.nrNonEmpty();
+		in.allocateKeyArray(nb);
+		
+		logDebug("Found nb of Keys=", String.valueOf(nb));
 
-		logDebug("Found nb of Keys=", String.valueOf(nrkeys));
-		for (int i = 0; i < nrkeys; i++) {
+		for (int i = 0; i < nb; i++) {
 			TableItem item = wKey.getNonEmpty(i);
-			in.getCols()[i] = item.getText(1);
-			in.getFields()[i] = item.getText(2);
+			in.getAllCols()[i] = item.getText(1);
+			in.getAllFields()[i] = item.getText(2);
+			in.getAttType()[i] = item.getText(3);
 		}
-
+		
+		
 		if (wAutoinc.getSelection()) {
 			in.setKeyCreation(LoadHubMeta.CREATION_METHOD_AUTOINC);
 		} else if (wSeqButton.getSelection()) {
@@ -816,8 +823,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 			in.setKeyCreation(LoadHubMeta.CREATION_METHOD_TABLEMAX);
 		}
 
-		// in.setRemoveNatkeyFields(wRemoveNatkey.getSelection());
-		in.setCreationDateCol(wCreationDateCol.getText());
+		in.setColLoadDTS(wCreationDateCol.getText());
 	}
 
 	private void getSchemaNames() {
@@ -831,8 +837,8 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 				if (null != schemas && schemas.length > 0) {
 					schemas = Const.sortStrings(schemas);
 					EnterSelectionDialog dialog = new EnterSelectionDialog(shell, schemas, BaseMessages.getString(PKG,
-							"LoadHubDialog.AvailableSchemas.Title", wConnection.getText()), BaseMessages.getString(PKG,
-							"LoadHubDialog.AvailableSchemas.Message", wConnection.getText()));
+							"LoadDialog.AvailableSchemas.Title", wConnection.getText()), BaseMessages.getString(PKG,
+							"LoadDialog.AvailableSchemas.Message", wConnection.getText()));
 					String d = dialog.open();
 					if (d != null) {
 						wSchema.setText(Const.NVL(d, ""));
@@ -894,7 +900,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 						});
 			}
 		} catch (KettleException ke) {
-			new ErrorDialog(shell, BaseMessages.getString(PKG, "LoadHubDialog.UnableToGetFieldsError.DialogTitle"),
+			new ErrorDialog(shell, BaseMessages.getString(PKG, "LoadDialog.UnableToGetFieldsError.DialogTitle"),
 					BaseMessages.getString(PKG, "LoadDialog.UnableToGetFieldsError.DialogMessage"), ke);
 		}
 	}

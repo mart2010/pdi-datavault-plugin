@@ -1,5 +1,6 @@
 package plugin.mo.trans.steps.loadlink;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Shell;
@@ -32,7 +33,10 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
 import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.HubLinkCommonMeta;
+import plugin.mo.trans.steps.common.LoadHubOrLinkData;
 import plugin.mo.trans.steps.loadhub.LoadHubMeta;
+import plugin.mo.trans.steps.loadlink.ui.LoadLinkDialog;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 
@@ -41,17 +45,16 @@ import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
  * TODO: 
  * -
  * 
- * 
  * @author mouellet
  *
  */
 
 
-public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
+public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface, HubLinkCommonMeta {
 	private static Class<?> PKG = CompositeValues.class;
 	
-	public static String IDENTIFYING_KEY = "Identifying Key";
-	public static String OTHER_TYPE = "Other Attribute";
+	public static String IDENTIFYING_KEY = "Link Identifying Key";
+	public static String OTHER_TYPE = "Link Other Attribute";
 	
 	
 	private DatabaseMeta databaseMeta;
@@ -62,22 +65,22 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 	// buffer & fetch size
 	private int bufferSize;
 
-	
-	// key fields used for look up a link?
-	private String[] fields;
+	// all fields defined in UI
+	private String[] allFields;
 
 	// cols holding look-up keys in link table
-	private String[] cols;
-
+	private String[] allCols;
+	
 	// type (identifying key or other)
 	private String[] attType;
 
 	// column holding the PKey of Link
 	private String primaryKeyCol;
+	
 	//key added in output stream to avoid name conflict 
 	private String newKeyFieldName;
 			
-	private String creationDateCol;
+	private String colLoadDTS;
 	
 	//method used to generate keys
 	private String keyCreation;
@@ -99,11 +102,11 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 	
 	@Override
 	public StepDataInterface getStepData() {
-		return new LoadHubOrLinkData();
+		return new LoadHubOrLinkData(this.getLog());
 	}
 
 	public StepDialogInterface getDialog(Shell shell, StepMetaInterface meta, TransMeta transMeta, String name) {
-		return null; // new LoadSatDialog(shell, meta, transMeta, name);
+		return new LoadLinkDialog(shell, meta, transMeta, name);
 	}
 	
 	
@@ -119,8 +122,8 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 		allocateKeyArray(nrkeys);
 
 		for (int i = 1; i < nrkeys; i++) {
-			fields[i-1] = "key" + i;
-			cols[i-1] = "keylookup" + i;
+			allFields[i-1] = "key" + i;
+			allCols[i-1] = "keylookup" + i;
 			attType[i-1] = LoadLinkMeta.IDENTIFYING_KEY;
 		}
 		
@@ -128,8 +131,8 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 	}
 
 	public void allocateKeyArray(int nrkeys) {
-		fields = new String[nrkeys];
-		cols = new String[nrkeys];
+		allFields = new String[nrkeys];
+		allCols = new String[nrkeys];
 		attType = new String[nrkeys];
 	}
 
@@ -260,7 +263,11 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 					}
 					
 					//....
-					
+					/* to add to check :
+					if (keyCols == null || keyCols.length < 2) {
+						throw new KettleStepException(BaseMessages.getString(PKG, "LoadLinkMeta.CheckResult.KeyFieldsIssues"));
+					}
+					*/
 
 					if (keyCreation != null) {
 						if (!(LoadHubMeta.CREATION_METHOD_AUTOINC.equals(keyCreation)
@@ -302,13 +309,13 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 		public Object clone() {
 			LoadLinkMeta retval = (LoadLinkMeta) super.clone();
 
-			int nrkeys = fields.length;
-			retval.allocateKeyArray(nrkeys);
+			int nr = allFields.length;
+			retval.allocateKeyArray(nr);
 
 			// Deep copy for Array
-			for (int i = 0; i < nrkeys; i++) {
-				retval.fields[i] = fields[i];
-				retval.cols[i] = cols[i];
+			for (int i = 0; i < nr; i++) {
+				retval.allFields[i] = allFields[i];
+				retval.allCols[i] = allCols[i];
 				retval.attType[i] = attType[i];
 			}		
 			return retval;
@@ -399,27 +406,45 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 		}
 
 
-		public String[] getFields() {
-			return fields;
+		public String[] getColKeys() {
+			List<Integer> idx = new ArrayList<Integer>();
+			for (int i = 0; i < attType.length; i++){
+				if (attType[i].equals(IDENTIFYING_KEY)){
+					idx.add(Integer.valueOf(i));
+				}
+			}
+			if (idx.size() == 0){
+				return null;
+			} else {
+				String[] t = new String[idx.size()];
+				for (int j = 0; j < idx.size(); j++){
+					t[j] = allCols[idx.get(j)]; 
+				}
+				return t;
+			}
 		}
 
-
-		public void setKeyField(String[] keyField) {
-			this.fields = keyField;
+		public String[] getColOthers() {
+			List<Integer> idx = new ArrayList<Integer>();
+			for (int i = 0; i < attType.length; i++){
+				if (attType[i].equals(OTHER_TYPE)){
+					idx.add(Integer.valueOf(i));
+				}
+			} 
+			if (idx.size() == 0){
+				return null;
+			} else {
+				String[] t = new String[idx.size()];
+				for (int j = 0; j < idx.size(); j++){
+					t[j] = allCols[idx.get(j)]; 
+				}
+				return t;
+			}
+			
 		}
 
-
-		public String[] getCols() {
-			return cols;
-		}
-
-
-		public void setKeyCol(String[] keyCol) {
-			this.cols = keyCol;
-		}
-
-
-		public String getPrimaryKeyCol() {
+		
+		public String getPrimaryKey() {
 			return primaryKeyCol;
 		}
 
@@ -440,13 +465,13 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 		}
 
 
-		public String getCreationDateCol() {
-			return creationDateCol;
+		public String getColLoadDTS() {
+			return colLoadDTS;
 		}
 
 
-		public void setCreationDateCol(String creationDateCol) {
-			this.creationDateCol = creationDateCol;
+		public void setColLoadDTS(String dts) {
+			this.colLoadDTS = dts;
 		}
 
 
@@ -462,6 +487,34 @@ public class LoadLinkMeta extends BaseStepMeta implements StepMetaInterface {
 
 		public void setAttType(String[] attType) {
 			this.attType = attType;
+		}
+
+
+		public String[] getAllFields() {
+			return allFields;
+		}
+
+
+		public void setAllFields(String[] allFields) {
+			this.allFields = allFields;
+		}
+
+
+		public String[] getAllCols() {
+			return allCols;
+		}
+
+
+		public void setAllCols(String[] allCols) {
+			this.allCols = allCols;
+		}
+
+
+
+		@Override
+		public String getColRecSource() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	
 		

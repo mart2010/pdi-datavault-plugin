@@ -24,6 +24,8 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
 import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.HubLinkCommonMeta;
+import plugin.mo.trans.steps.common.LoadHubOrLinkData;
 import plugin.mo.trans.steps.loadsat.LoadSatData;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
@@ -34,6 +36,7 @@ import plugin.mo.trans.steps.loadsat.LoadSatMeta;
  * <p>
  * 
  * MAYBE ONLY TRUE WHEN USING TABLEMAX... WITH ALL MY ERROR HANDLING WITH BATCH COULD WORK!!!! TO BE RE-ANALYZED.
+ * BUT STILL TRUE ABOUT BOTTLENECK AND SYNCHRONIZATION BYT MY CODE DOES NOT BLOCK BY ALLOWING DB ERRORS AND WORK AROUND THEM
  * These "Load*" plugins are not meant for "Run multiple copies..".   This is to avoid 
  * blocking long operations requiring synchronization.  Operations like DB look-up must be done 
  * serially to avoid multiple threads generating different keys for "missed" look-up on same natural-key.<b>
@@ -150,7 +153,7 @@ public class LoadLink extends BaseStep implements StepInterface {
 				continue;
 			} 
 			data.getLookupMapping().put(newVal, null);
-			//Add new Key when TABLEMAX
+			//Add new Key when relying on TABLEMAX to generate keys
 			Object[] v;
 			if (meta.isTableMax()){
 				v = Arrays.copyOf(newVal.getValues(),newVal.getValues().length+1);
@@ -222,13 +225,19 @@ public class LoadLink extends BaseStep implements StepInterface {
 		data.outputRowMeta = getInputRowMeta().clone();
 		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
 	
-		// Initialize the row indexes of keys...
-		data.initKeysRowIdx(meta, getInputRowMeta());
+		// Initialize the row indexes of keys and none-keys...
+		String[] keyCols = meta.getColKeys();
+		if (keyCols == null || keyCols.length < 2) {
+			throw new KettleStepException(BaseMessages.getString(PKG, "LoadLinkMeta.CheckResult.KeyFieldsIssues"));
+		}
+		String[] otherCols = meta.getColOthers();
+		
+		data.initRowIdx(keyCols,otherCols, getInputRowMeta());
 		
 		data.initializeRowProcessing(meta.getBufferSize());
 		
-		data.initPrepStmtLookup(meta, getInputRowMeta());
-		data.initPrepStmtInsert(meta, getInputRowMeta());
+		data.initPrepStmtLookup( (HubLinkCommonMeta) meta, meta.getBufferSize(), getInputRowMeta());
+		data.initPrepStmtInsert( (HubLinkCommonMeta) meta, meta.getKeyCreation(), meta.getSequenceName());
 		
 	}		
 		

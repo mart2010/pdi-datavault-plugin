@@ -179,7 +179,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 			    }
 				CompositeValues prevRow = data.getBufferSatHistRows().lower(satRow);
 				//newRow is 1st sat record 
-				if ((prevRow != null) && !(prevRow.getSurrkeyValue().equals(satRow.getSurrkeyValue()))) {
+				if ((prevRow != null) && !(prevRow.getPkeyValue().equals(satRow.getPkeyValue()))) {
 					prevRow =  null;
 				}
 				//Remove when previous is identical
@@ -205,7 +205,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 		
 		for (CompositeValues rec : data.getBufferSatHistRows()){
 			CompositeValues nextRec = data.getBufferSatHistRows().higher(rec);
-			if (nextRec != null && !nextRec.getSurrkeyValue().equals(rec.getSurrkeyValue())){
+			if (nextRec != null && !nextRec.getPkeyValue().equals(rec.getPkeyValue())){
 				nextRec = null;
 			}
 			Object optToDate = null;
@@ -222,7 +222,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 			//for existing, update toDate if needed and new record is found next
 				if (meta.isToDateColumnUsed() && nextRec != null && !nextRec.isPersisted()){
 					updateParams.add(new Object[]{nextRec.getFromDateValue()
-							,rec.getSurrkeyValue()
+							,rec.getPkeyValue()
 							,rec.getFromDateValue() });
 				}
 			}

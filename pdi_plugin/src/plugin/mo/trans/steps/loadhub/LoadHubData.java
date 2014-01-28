@@ -277,7 +277,7 @@ public class LoadHubData extends BaseStepData implements StepDataInterface {
 			if (this.natkeysRowIdx[i] < 0) {
 				// couldn't find field!
 				throw new KettleStepException(BaseMessages.getString(PKG,
-						"LoadHub.Exception.FieldNotFound", meta.getNatKeyField()[i]));
+						"Load.Exception.FieldNotFound", meta.getNatKeyField()[i]));
 			}
 		}
 	}

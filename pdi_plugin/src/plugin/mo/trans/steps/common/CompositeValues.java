@@ -24,9 +24,8 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	private final Object[] values;
 	// immutable hash pre-calculated in Constructor
 	private int hashValue = 7;
-	// corresponding to surrKey
-	// null, when not used as satellite rows
-	private Comparable<Object> surrkeyValue;
+	// corresponding to row PKey (null, when not used as satellite)
+	private Comparable<Object> pkeyValue;
 
 	//corresponding to "fromDate" time point
 	// null, when not used as satellite rows or satellite is immutable
@@ -36,8 +35,7 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	private boolean persisted = false;
 	
 	/**
-	 * Constructor that read all key values as forming a single 
-	 * composite key
+	 * Constructor that interpret all values as one natural key (composite)
 	 * @param keyvalues 
 	 * 		complete row is used 
 	 */
@@ -50,24 +48,24 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	}
 
 	/**
-	 * Convenient to only consider key value(s) at specified position
+	 * Used to only consider value(s) at specified position
 	 * @param fullrow
-	 * @param indexpos 
+	 * @param keyvaluesIdx 
 	 * 		position of key values to use
 	 */
-	public CompositeValues(Object[] fullrow, int[] indexpos) {
-		values = new Object[indexpos.length];
-		for (int i = 0; i < indexpos.length; i++) {
-			values[i] = fullrow[indexpos[i]];
+	public CompositeValues(Object[] fullrow, int[] keyvaluesIdx) {
+		values = new Object[keyvaluesIdx.length];
+		for (int i = 0; i < keyvaluesIdx.length; i++) {
+			values[i] = fullrow[keyvaluesIdx[i]];
 			hashValue += values[i].hashCode();
 		}
 	}
 
 	
 	/**
-	 * Convenient constructor to only consider the first n values in row  
-	 * starting at some index.  Useful when ResultSet returns Object[] with 
-	 * empty columns appended at end
+	 * Used to only consider the first n values in row  
+	 * starting at some index.  Convenient when ResultSet 
+	 * returns Array with empty columns appended at end
 	 * @param fullrow
 	 * @param from 
 	 * 		starting index (0-based)
@@ -103,9 +101,9 @@ public class CompositeValues implements Comparable<CompositeValues>{
 		this(row,indexpos);
 	
 		try {
-			surrkeyValue = (Comparable<Object>) row[surkeyIdx];
+			pkeyValue = (Comparable<Object>) row[surkeyIdx];
 			//hashCode must be consistent with Equals
-			hashValue = surrkeyValue.hashCode();			
+			hashValue = pkeyValue.hashCode();			
 			if (fromDateIdx != -1){
 				fromDateValue = (Comparable<Object>) row[fromDateIdx];
 				hashValue = hashValue + fromDateValue.hashCode();
@@ -136,9 +134,9 @@ public class CompositeValues implements Comparable<CompositeValues>{
 		this(row,from,n);
 	
 		try {
-			surrkeyValue = (Comparable<Object>) row[surkeyIdx];
+			pkeyValue = (Comparable<Object>) row[surkeyIdx];
 			//hashCode must be consistent with Equals
-			hashValue = surrkeyValue.hashCode();			
+			hashValue = pkeyValue.hashCode();			
 			if (fromDateIdx != -1){
 				fromDateValue = (Comparable<Object>) row[fromDateIdx];
 				hashValue = hashValue + fromDateValue.hashCode();
@@ -152,7 +150,7 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	
 	
 	public int getNumberOfKey() {
-		if (surrkeyValue == null){
+		if (pkeyValue == null){
 			return values.length;	
 		} else {
 			//sat row has always 1 or 2 keys
@@ -171,15 +169,15 @@ public class CompositeValues implements Comparable<CompositeValues>{
 
 		CompositeValues other = (CompositeValues) obj;
 		//normal 
-		if (surrkeyValue == null) {
+		if (pkeyValue == null) {
 			return (Arrays.equals(values, other.values));	
 		} 
 		//immutable sat row
 		if (fromDateValue == null){
-			return surrkeyValue.equals(other.surrkeyValue);
+			return pkeyValue.equals(other.pkeyValue);
 		}
     	//normal sat row 
-		return   surrkeyValue.equals(other.surrkeyValue)
+		return   pkeyValue.equals(other.pkeyValue)
 					&& fromDateValue.equals(other.fromDateValue) ; 
 	}
 
@@ -215,26 +213,26 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	 */
 	@Override
 	public int compareTo(CompositeValues o) {
-		if (surrkeyValue == null){
+		if (pkeyValue == null){
 			throw new IllegalStateException("Cannot sort object without valid surrkey value");
 		}
 
 		//immutable sat row
 		if (fromDateValue == null){
-			return surrkeyValue.compareTo(o.getSurrkeyValue());
+			return pkeyValue.compareTo(o.getPkeyValue());
 		}
 		
 		//normal sat row 
-		if (surrkeyValue.compareTo(o.getSurrkeyValue()) == 0){
+		if (pkeyValue.compareTo(o.getPkeyValue()) == 0){
 			return fromDateValue.compareTo(o.getFromDateValue());
 		} else {
-			return surrkeyValue.compareTo(o.getSurrkeyValue());
+			return pkeyValue.compareTo(o.getPkeyValue());
 		}
 	}
 
 	
-	public Comparable<Object> getSurrkeyValue() {
-		return surrkeyValue;
+	public Comparable<Object> getPkeyValue() {
+		return pkeyValue;
 	}
 
 	public Object[] getValues() {
@@ -255,7 +253,7 @@ public class CompositeValues implements Comparable<CompositeValues>{
 
 	@Override
 	public String toString() {
-		return "CompositeValues [values=" + Arrays.toString(values) + ", surrkeyValue=" + surrkeyValue
+		return "CompositeValues [values=" + Arrays.toString(values) + ", surrkeyValue=" + pkeyValue
 				+ ", fromDateValue=" + fromDateValue + "]";
 	}
 
