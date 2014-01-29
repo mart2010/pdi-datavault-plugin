@@ -54,6 +54,7 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
+import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 
@@ -465,7 +466,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		wSeq.setLayoutData(gdSeq);
 		wSeq.addFocusListener(new FocusListener() {
 			public void focusGained(FocusEvent arg0) {
-				inputMeta.setSurrKeyCreation(CombinationLookupMeta.CREATION_METHOD_SEQUENCE);
+				inputMeta.setSurrKeyCreation(LoadHubMeta.CREATION_METHOD_SEQUENCE);
 				wSeqButton.setSelection(true);
 				wAutoinc.setSelection(false);
 				wTableMax.setSelection(false);

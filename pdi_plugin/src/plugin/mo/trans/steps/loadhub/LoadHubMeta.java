@@ -152,7 +152,7 @@ public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
 			creationDateCol = XMLHandler.getTagValue(stepnode, "creationDate");
 
 		} catch (Exception e) {
-			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.UnableToLoadStepInfo"), e);
+			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadMeta.Exception.LoadCommomStepInfo"), e);
 		}
 	}
 
@@ -248,7 +248,7 @@ public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
 			creationDateCol = rep.getStepAttributeString(id_step, "creationDateCol");
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG,
-					"LoadHubMeta.Exception.UnexpectedErrorWhileReadingStepInfo"), e);
+					"LoadMeta.Exception.ErrorReadingCommonStepInfo"), e);
 		}
 	}
 
@@ -278,7 +278,7 @@ public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
 			rep.saveStepAttribute(id_transformation, id_step, "removeNatkeyFields", removeNatkeyFields);
 			rep.saveStepAttribute(id_transformation, id_step, "creationDate", creationDateCol);
 		} catch (Exception e) {
-			throw new KettleException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.UnableToSaveStepInfo")
+			throw new KettleException(BaseMessages.getString(PKG, "LoadMeta.Exception.UnableToSaveCommonStepInfo")
 					+ id_step, e);
 		}
 	}

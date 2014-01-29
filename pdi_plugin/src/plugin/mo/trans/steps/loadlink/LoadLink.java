@@ -23,9 +23,9 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
+import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
-import plugin.mo.trans.steps.common.HubLinkCommonMeta;
-import plugin.mo.trans.steps.common.LoadHubOrLinkData;
+import plugin.mo.trans.steps.common.LoadHubLinkData;
 import plugin.mo.trans.steps.loadsat.LoadSatData;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
@@ -71,13 +71,13 @@ import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 public class LoadLink extends BaseStep implements StepInterface {
 	private static Class<?> PKG = CompositeValues.class;
 	
-	private LoadHubOrLinkData data;
+	private LoadHubLinkData data;
 	private LoadLinkMeta meta;
 	
 	public LoadLink(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
 		super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
 		meta = (LoadLinkMeta) getStepMeta().getStepMetaInterface();
-		data = (LoadHubOrLinkData) stepDataInterface;
+		data = (LoadHubLinkData) stepDataInterface;
 		
 	}
 
@@ -133,7 +133,6 @@ public class LoadLink extends BaseStep implements StepInterface {
 			processBufferAndSendRows(getInputRowMeta().size(),false);	
 			// Processing buffer finished when all key found!
 			if (data.getBufferRows().size() == 0) {
-				data.initializeRowProcessing(meta.getBufferSize());
 				if (!data.finishedAllRows) {
 					return true;
 				} else {
@@ -186,7 +185,6 @@ public class LoadLink extends BaseStep implements StepInterface {
 			throw new IllegalStateException("Buffer should be empty, check program logic");
 			
 	
-		data.initializeRowProcessing(meta.getBufferSize());
 	
 		/***** step-6 --> Continue processing or Exit if no more rows expected *****/
 		if (!data.finishedAllRows) {
@@ -218,7 +216,6 @@ public class LoadLink extends BaseStep implements StepInterface {
 		}
 	}
 	
-
 	
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {
 		
@@ -226,19 +223,12 @@ public class LoadLink extends BaseStep implements StepInterface {
 		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
 	
 		// Initialize the row indexes of keys and none-keys...
-		String[] keyCols = meta.getColKeys();
-		if (keyCols == null || keyCols.length < 2) {
+		if (meta.getCols() == null || meta.getCols().length < 2) {
 			throw new KettleStepException(BaseMessages.getString(PKG, "LoadLinkMeta.CheckResult.KeyFieldsIssues"));
 		}
-		String[] otherCols = meta.getColOthers();
-		
-		data.initRowIdx(keyCols,otherCols, getInputRowMeta());
-		
-		data.initializeRowProcessing(meta.getBufferSize());
-		
-		data.initPrepStmtLookup( (HubLinkCommonMeta) meta, meta.getBufferSize(), getInputRowMeta());
-		data.initPrepStmtInsert( (HubLinkCommonMeta) meta, meta.getKeyCreation(), meta.getSequenceName());
-		
+		data.initializeRowProcessing((BaseLoadMeta) meta, getInputRowMeta());
+		data.initPrepStmtLookup( (BaseLoadMeta) meta, meta.getBufferSize(), getInputRowMeta());
+		data.initPrepStmtInsert( (BaseLoadMeta) meta, meta.getKeyGeneration(), meta.getSchemaName(), getInputRowMeta());
 	}		
 		
 	
@@ -251,7 +241,7 @@ public boolean init(StepMetaInterface sii, StepDataInterface sdi) {
 				return false;
 			}
 			data.setRealSchemaName(meta.getDatabaseMeta(), meta.getSchemaName());
-			data.setQualifiedLinkTable(meta.getDatabaseMeta(), meta.getLinkTable());
+			data.setQualifiedTable(meta.getDatabaseMeta(), meta.getTargetTable());
 
 			data.db = new Database(this, meta.getDatabaseMeta());
 			data.db.shareVariablesWith(this);
@@ -282,7 +272,7 @@ public boolean init(StepMetaInterface sii, StepDataInterface sdi) {
 	
 public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 	meta = (LoadLinkMeta) smi;
-	data = (LoadHubOrLinkData) sdi;
+	data = (LoadHubLinkData) sdi;
 
 	if (data.db != null) {
 		try {

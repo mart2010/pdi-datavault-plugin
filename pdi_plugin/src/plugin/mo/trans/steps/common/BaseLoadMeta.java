@@ -8,16 +8,19 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
 import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 
 /**
- * Contains attributes exchanged between UI and Meta common to the plugins Steps.
+ * Contains attributes exchanged between UI and Meta common to Steps.
  * 
  * Subclass must implement: clone(), loadXML(), check(), getStep(), 
  * getStepData(), getDialog(), complete the partial impl of reading/writing
@@ -25,7 +28,7 @@ import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
  * @author mouellet
  *
  */
-public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInterface {
+public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInterface {
 	//TODO: remove the ones in subclass
 	protected static Class<?> PKG = CompositeValues.class;
 
@@ -55,7 +58,7 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 	protected String newKeyFieldName;		
 
 	
-	public LoadBaseMeta(){
+	public BaseLoadMeta(){
 		super();
 	}
 	
@@ -65,7 +68,6 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 		targetTable = "";
 		databaseMeta = null;
 		bufferSize = MIN_BUFFER_SIZE*4;
-	
 		//rest to be implemented by subclass 	
 	}
 
@@ -76,6 +78,10 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 		types = new String[nrkeys];
 	}
 
+	/*
+	 * This handles common info, specific is implemented by subclass
+	 * picking up returned String... 
+	 */
 	public String getXML() throws KettleException {
 		StringBuffer retval = new StringBuffer(512);
 		retval.append("  ").append(
@@ -97,13 +103,41 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 		retval.append("  ").append(XMLHandler.addTagValue("auditDts", auditDtsCol));
 		retval.append("  ").append(XMLHandler.addTagValue("auditRecSrcCol", auditRecSourceCol));
 		retval.append("  ").append(XMLHandler.addTagValue("auditRecSrcVal", auditRecSourceValue));
-
 		return retval.toString();
-		//rest to be implemented by subclass (picking up the returned String)
-		
 	}
 
-	//subclass must still imple the LoadXML..
+	/*
+	 * This handles common info, specific is implemented by subclass 
+	 */
+	public void saveRep(Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step)
+			throws KettleException {
+		try {
+			rep.saveDatabaseMetaStepAttribute(id_transformation, id_step, "id_connection", databaseMeta);
+			// this saves the step-database Id
+			if (databaseMeta != null) {
+				rep.insertStepDatabase(id_transformation, id_step, databaseMeta.getObjectId());
+			}
+			rep.saveStepAttribute(id_transformation, id_step, "schemaName", schemaName);
+			rep.saveStepAttribute(id_transformation, id_step, "targetTable", targetTable);
+			rep.saveStepAttribute(id_transformation, id_step, "batchSize", bufferSize);
+			
+			for (int i = 0; i < fields.length; i++) {
+				rep.saveStepAttribute(id_transformation, id_step, i, "field", fields[i]);
+				rep.saveStepAttribute(id_transformation, id_step, i, "col", cols[i]);
+				rep.saveStepAttribute(id_transformation, id_step, i, "type", types[i]);
+			}
+			rep.saveStepAttribute(id_transformation, id_step, "auditDts", auditDtsCol);
+			rep.saveStepAttribute(id_transformation, id_step, "auditRecSrcCol", auditRecSourceCol);
+			rep.saveStepAttribute(id_transformation, id_step, "auditRecSrcVal", auditRecSourceValue);
+		} catch (Exception e) {
+			throw new KettleException(BaseMessages.getString(PKG, "LoadMeta.Exception.UnableToSaveCommonStepInfo")
+					+ id_step, e);
+		}
+	}
+
+	/*
+	 * This handles common info, specific is implemented by subclass 
+	 */
 	protected void readData(Node stepnode, List<? extends SharedObjectInterface> databases) throws KettleXMLException {
 		try {
 			String con = XMLHandler.getTagValue(stepnode, "connection");
@@ -124,20 +158,44 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 				cols[i] = XMLHandler.getTagValue(knode, "col");
 				types[i] = XMLHandler.getTagValue(knode, "type");
 			}
-
 			auditDtsCol = XMLHandler.getTagValue(stepnode, "auditDts");
 			auditRecSourceCol = XMLHandler.getTagValue(stepnode, "auditRecSrcCol");
 			auditRecSourceValue = XMLHandler.getTagValue(stepnode, "auditRecSrcValue");
-				
-		
 		} catch (Exception e) {
-			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.UnableToLoadStepInfo"), e);
+			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadMeta.Exception.LoadCommomStepInfo"), e);
 		}
 	}
 
-	//DO The other reading...writing..
+	/*
+	 * This handles common info, specific is implemented by subclass 
+	 */
+	public void readRep(Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases)
+			throws KettleException {
+		try {
+			databaseMeta = rep.loadDatabaseMetaFromStepAttribute(id_step, "id_connection", databases);
+
+			schemaName = rep.getStepAttributeString(id_step, "schemaName");
+			targetTable = rep.getStepAttributeString(id_step, "hubTable");
+			bufferSize = (int) rep.getStepAttributeInteger(id_step, "batchSize");
+			
+			int nrkeys = rep.countNrStepAttributes(id_step, "key");
+			allocateKeyArray(nrkeys);
+			for (int i = 0; i < nrkeys; i++) {
+				fields[i] = rep.getStepAttributeString(id_step, i, "field");
+				cols[i] = rep.getStepAttributeString(id_step, i, "col");
+				types[i] = rep.getStepAttributeString(id_step, i, "type");
+			}
+			auditDtsCol = rep.getStepAttributeString(id_step, "auditDts");
+			auditRecSourceCol = rep.getStepAttributeString(id_step, "auditRecSrcCol");
+			auditRecSourceValue = rep.getStepAttributeString(id_step, "auditRecSrcValue");
+		} catch (Exception e) {
+			throw new KettleException(BaseMessages.getString(PKG,
+					"LoadMeta.Exception.ErrorReadingCommonStepInfo"), e);
+		}
+	}
+
 	
-	
+
 	
 	public DatabaseMeta[] getUsedDatabaseConnections() {
 		if (databaseMeta != null) {
@@ -147,8 +205,11 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 		}
 	}
 
-	
-	//maybe must be done by subclass... to get proper class type...
+	/*
+	 * TODO: verify we need overriding equals() 
+	 * most Steps do not do this!
+	 * 
+	 */
 	public boolean equals(Object other) {
 		if (other == this) {
 			return true;
@@ -157,7 +218,7 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 			return false;
 		}
 
-		LoadBaseMeta o = (LoadBaseMeta) other;
+		BaseLoadMeta o = (BaseLoadMeta) other;
 		if ((getSchemaName() == null && o.getSchemaName() != null)
 				|| (getSchemaName() != null && o.getSchemaName() == null)
 				|| (getSchemaName() != null && o.getSchemaName() != null && !getSchemaName().equals(o.getSchemaName()))) {
@@ -313,6 +374,14 @@ public abstract class LoadBaseMeta extends BaseStepMeta implements StepMetaInter
 		this.newKeyFieldName = newKeyFieldName;
 	}
 	
+
+	public boolean isAutoIncrement() {
+		return CREATION_METHOD_AUTOINC.equals(keyGeneration);
+	}
+
+	public boolean isTableMax() {
+		return CREATION_METHOD_TABLEMAX.equals(keyGeneration);
+	}
 
 	
 	

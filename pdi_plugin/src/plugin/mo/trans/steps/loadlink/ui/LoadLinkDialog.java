@@ -55,6 +55,7 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
+import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
@@ -299,7 +300,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		wlKey.setLayoutData(fdlKey);
 
 		int nrKeyCols = 3;
-		int nrKeyRows = (inputMeta.getAllFields() != null ? inputMeta.getAllFields().length : 1);
+		int nrKeyRows = (inputMeta.getFields() != null ? inputMeta.getFields().length : 1);
 
 		ciKey = new ColumnInfo[nrKeyCols];		
 		ciKey[0] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.TableColumn"),
@@ -391,7 +392,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		wSeq.setLayoutData(gdSeq);
 		wSeq.addFocusListener(new FocusListener() {
 			public void focusGained(FocusEvent arg0) {
-				inputMeta.setKeyCreation(CombinationLookupMeta.CREATION_METHOD_SEQUENCE);
+				inputMeta.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_SEQUENCE);
 				wSeqButton.setSelection(true);
 				wAutoinc.setSelection(false);
 				wTableMax.setSelection(false);
@@ -710,43 +711,43 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 			wSchema.setText(inputMeta.getSchemaName());
 		}
 
-		if (inputMeta.getLinkTable() != null) {
-			wLinkTable.setText(inputMeta.getLinkTable());
+		if (inputMeta.getTargetTable() != null) {
+			wLinkTable.setText(inputMeta.getTargetTable());
 		}
 
 		wBatchSize.setText("" + inputMeta.getBufferSize());
 
-		if (inputMeta.getAllFields() != null) {
-			for (int i = 0; i < inputMeta.getAllFields().length; i++) {
+		if (inputMeta.getFields() != null) {
+			for (int i = 0; i < inputMeta.getFields().length; i++) {
 				TableItem item = wKey.table.getItem(i);
-				if (inputMeta.getAllCols()[i] != null) {
-					item.setText(1, inputMeta.getAllCols()[i]);
+				if (inputMeta.getCols()[i] != null) {
+					item.setText(1, inputMeta.getCols()[i]);
 				}
-				if (inputMeta.getAllFields()[i] != null) {
-					item.setText(2, inputMeta.getAllFields()[i]);
+				if (inputMeta.getFields()[i] != null) {
+					item.setText(2, inputMeta.getFields()[i]);
 				}
-				if (inputMeta.getAttType()[i] != null) {
-					item.setText(3, inputMeta.getAttType()[i]);
+				if (inputMeta.getTypes()[i] != null) {
+					item.setText(3, inputMeta.getTypes()[i]);
 				}
 
 			}
 		}
 
-		if (inputMeta.getPrimaryKey() != null) {
-			wSurrKey.setText(inputMeta.getPrimaryKey());
+		if (inputMeta.getTechKeyCol() != null) {
+			wSurrKey.setText(inputMeta.getTechKeyCol());
 		}
 
-		wCreationDateCol.setText(Const.NVL(inputMeta.getColLoadDTS(), ""));
+		wCreationDateCol.setText(Const.NVL(inputMeta.getAuditDtsCol(), ""));
 
-		String surrKeyCreation = inputMeta.getKeyCreation();
+		String surrKeyCreation = inputMeta.getKeyGeneration();
 
-		if (LoadHubMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
+		if (LoadLinkMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
 			wAutoinc.setSelection(true);
-		} else if ((LoadHubMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
+		} else if ((LoadLinkMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
 			wSeqButton.setSelection(true);
 		} else { // TableMax is also the default when no creation is yet defined
 			wTableMax.setSelection(true);
-			inputMeta.setKeyCreation(LoadHubMeta.CREATION_METHOD_TABLEMAX);
+			inputMeta.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_TABLEMAX);
 		}
 		if (inputMeta.getSequenceName() != null) {
 			wSeq.setText(inputMeta.getSequenceName());
@@ -796,8 +797,8 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 		in.setDatabaseMeta(transMeta.findDatabase(wConnection.getText()));
 		in.setSchemaName(wSchema.getText());
-		in.setLinkTable(wLinkTable.getText());
-		in.setPrimaryKeyCol(wSurrKey.getText());
+		in.setTargetTable(wLinkTable.getText());
+		in.setTechKeyCol(wSurrKey.getText());
 		
 		in.setBufferSize(Const.toInt(wBatchSize.getText(), 0));
 
@@ -808,22 +809,23 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 		for (int i = 0; i < nb; i++) {
 			TableItem item = wKey.getNonEmpty(i);
-			in.getAllCols()[i] = item.getText(1);
-			in.getAllFields()[i] = item.getText(2);
-			in.getAttType()[i] = item.getText(3);
+			in.getCols()[i] = item.getText(1);
+			in.getFields()[i] = item.getText(2);
+			in.getTypes()[i] = item.getText(3);
 		}
 		
 		
 		if (wAutoinc.getSelection()) {
-			in.setKeyCreation(LoadHubMeta.CREATION_METHOD_AUTOINC);
+			in.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_AUTOINC);
 		} else if (wSeqButton.getSelection()) {
-			in.setKeyCreation(LoadHubMeta.CREATION_METHOD_SEQUENCE);
+			in.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_SEQUENCE);
 			in.setSequenceName(wSeq.getText());
 		} else { // TableMax
-			in.setKeyCreation(LoadHubMeta.CREATION_METHOD_TABLEMAX);
+			in.setKeyGeneration(LoadHubMeta.CREATION_METHOD_TABLEMAX);
 		}
 
-		in.setColLoadDTS(wCreationDateCol.getText());
+		in.setAuditDtsCol(wCreationDateCol.getText());
+		
 	}
 
 	private void getSchemaNames() {

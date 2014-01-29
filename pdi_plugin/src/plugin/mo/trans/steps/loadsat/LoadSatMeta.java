@@ -175,7 +175,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 			toDateColumn = XMLHandler.getTagValue(stepnode, "toDateColumn");
 			toDateMaxFlag = XMLHandler.getTagValue(stepnode, "toDateMaxFlag");
 		} catch (Exception e) {
-			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.UnableToLoadStepInfo"), e);
+			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadMeta.Exception.LoadCommomStepInfo"), e);
 		}
 	}
 
@@ -248,7 +248,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 			toDateMaxFlag = rep.getStepAttributeString(id_step, "toDateMaxFlag");
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG,
-					"LoadHubMeta.Exception.UnexpectedErrorWhileReadingStepInfo"), e);
+					"LoadMeta.Exception.ErrorReadingCommonStepInfo"), e);
 		}
 	}
 
@@ -274,7 +274,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 			rep.saveStepAttribute(id_transformation, id_step, "toDateColumn", toDateColumn);
 			rep.saveStepAttribute(id_transformation, id_step, "toDateMaxFlag", toDateMaxFlag);
 		} catch (Exception e) {
-			throw new KettleException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.UnableToSaveStepInfo")
+			throw new KettleException(BaseMessages.getString(PKG, "LoadMeta.Exception.UnableToSaveCommonStepInfo")
 					+ id_step, e);
 		}
 	}
