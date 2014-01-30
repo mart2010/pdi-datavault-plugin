@@ -54,7 +54,8 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	protected String auditRecSourceCol;
 	protected String auditRecSourceValue;
 	
-	//name of techKeyCol added to output stream (default = table.techKeyCol)
+	//name of techKeyCol added to output stream for Hub & Link
+	//For now, get() simply return 'table.techKeyCol' (could be changed)
 	protected String newKeyFieldName;		
 
 	
@@ -160,7 +161,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 			}
 			auditDtsCol = XMLHandler.getTagValue(stepnode, "auditDts");
 			auditRecSourceCol = XMLHandler.getTagValue(stepnode, "auditRecSrcCol");
-			auditRecSourceValue = XMLHandler.getTagValue(stepnode, "auditRecSrcValue");
+			auditRecSourceValue = XMLHandler.getTagValue(stepnode, "auditRecSrcVal");
 		} catch (Exception e) {
 			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadMeta.Exception.LoadCommomStepInfo"), e);
 		}
@@ -187,7 +188,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 			}
 			auditDtsCol = rep.getStepAttributeString(id_step, "auditDts");
 			auditRecSourceCol = rep.getStepAttributeString(id_step, "auditRecSrcCol");
-			auditRecSourceValue = rep.getStepAttributeString(id_step, "auditRecSrcValue");
+			auditRecSourceValue = rep.getStepAttributeString(id_step, "auditRecSrcVal");
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG,
 					"LoadMeta.Exception.ErrorReadingCommonStepInfo"), e);
@@ -206,7 +207,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	/*
-	 * TODO: verify we need overriding equals() 
+	 * TODO: verify if we need overriding equals() 
 	 * most Steps do not do this!
 	 * 
 	 */
@@ -366,7 +367,13 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 
 
 	public String getNewKeyFieldName() {
-		return newKeyFieldName;
+		//returned default value
+		if (newKeyFieldName == null){
+			return targetTable + "." + techKeyCol;	
+		} else {
+			return newKeyFieldName;
+		}
+		
 	}
 
 

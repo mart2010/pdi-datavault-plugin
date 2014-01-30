@@ -384,7 +384,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 
 		// Creation Date :
 		wlCreationDateCol = new Label(shell, SWT.RIGHT);
-		wlCreationDateCol.setText(BaseMessages.getString(PKG, "LoadDialog.CreationDateField.Label"));
+		wlCreationDateCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Label"));
 		props.setLook(wlCreationDateCol);
 		FormData fdlLastUpdateField = new FormData();
 		fdlLastUpdateField.left = new FormAttachment(0, 0);

@@ -111,12 +111,23 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		this.initRowIdx(meta,inputRowMeta);
 	}
 
-	
-
 	public Long getKeyfromMap(Object[] originalRow) {
 		CompositeValues n = new CompositeValues(originalRow, keysRowIdx);
 		return lookupMapping.get(n);
 	}
+	
+
+	public boolean putKeyInMap(Object[] originalRow, Long valKey) {
+		CompositeValues n = new CompositeValues(originalRow, keysRowIdx);
+		if (lookupMapping.containsKey(n)){
+			return false;
+		} else {
+			lookupMapping.put(n,valKey);
+			return true;
+		}
+	}
+
+	
 	
 	/**
 	 * 
@@ -214,9 +225,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 					keyCounter++;
 				}
 			}
-			endClause.append( " ) ").append(Const.CR);
+			endClause.append( " ) ");
 			if (j < bufferSize - 1) {
-				endClause.append(" OR ").append(Const.CR);
+				endClause.append(" OR ");
 			}
 		}
 		sql.append(nkcols);
@@ -244,7 +255,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 		/*
 		 * This applied for both Hub and Link:
-		 * Column ordering rule: 1- cols composing natural/surr-key 
+		 * Column ordering rule: 1- cols composing natural/surr-key (same as for look-up)
 		 * 						 2- other cols not part of composite keys (optional) 
 		 * 						 3- technical audit columns
 		 * 						 4- technical Primary key (not applicable for AUTO-INCREMENT)
@@ -262,31 +273,31 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		// ***********************************************
 		// 1- Handle composite keys
 		// ***********************************************
+		int keyCounter = 0;
 		for (int i = 0; i < meta.getCols().length; i++) {
-			boolean first = true;
 			if (meta.getTypes()[i].equals(LoadLinkMeta.IDENTIFYING_KEY)){
-				if (first){
+				if (keyCounter == 0){
 					sqlIns += db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 					sqlValues += "?";
-					first = false;
 				} else {
 					sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 					sqlValues += ", ?";
 				}
+				keyCounter++;
 			}
 		}
 		
 		// ***********************************************
 		// 2- Handle other optional columns
 		// ***********************************************
+		int nonekeyCounter = 0;
 		for (int i = 0; i < meta.getCols().length; i++) {
-			int nonekeyCounter = 0;
 			if (meta.getTypes()[i].equals(LoadLinkMeta.OTHER_TYPE)){
 				sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 				sqlValues += ", ?";
 				
 				int tmpMetatype = inputRowMeta.getValueMeta(nonekeysRowIdx[nonekeyCounter]).getType();
-				insertRowMeta.addValueMeta(i, new ValueMeta(meta.getCols()[i], tmpMetatype));
+				insertRowMeta.addValueMeta(keyCounter+nonekeyCounter, new ValueMeta(meta.getCols()[i], tmpMetatype));
 				nonekeyCounter++;
 			}
 		}
@@ -388,7 +399,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		nonekeysRowIdx = new int[nbNoneKey];
 		nbKey = 0;
 		nbNoneKey = 0;
-		for (int i = 0; i < meta.getFields().length; i++) {
+		for (int i = 0; i < meta.getTypes().length; i++) {
 			if (meta.getTypes()[i].equals(LoadLinkMeta.IDENTIFYING_KEY)){
 				keysRowIdx[nbKey] = inputRowMeta.indexOfValue(meta.getFields()[i]);
 				if (keysRowIdx[nbKey] < 0) {
@@ -455,7 +466,8 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			if (meta.isTableMax()){
 				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(sIdx),meta.getAuditRecSourceValue(),sIdx+1);
 			}
-		prepStmtInsert.addBatch();
+			prepStmtInsert.addBatch();
+		
 		if (log.isRowLevel()){
 			log.logRowlevel("Adding batch values: " + Arrays.deepToString(oriRow));
 		}

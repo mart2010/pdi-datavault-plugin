@@ -130,7 +130,7 @@ public class LoadLink extends BaseStep implements StepInterface {
 		/***** step-2 --> Manage existing link: add key field, send downstream & remove from buffer *****/
 		
 		if (nbLookup > 0){
-			processBufferAndSendRows(getInputRowMeta().size(),false);	
+			processBufferAndSendRows(getInputRowMeta().size());	
 			// Processing buffer finished when all key found!
 			if (data.getBufferRows().size() == 0) {
 				if (!data.finishedAllRows) {
@@ -145,38 +145,37 @@ public class LoadLink extends BaseStep implements StepInterface {
 		/***** step-3 --> Add new rows to Batch while updating LookupMap ******/
 		
 		List<Object[]> queryParams = new ArrayList<Object[]>(meta.getBufferSize()+10);
-			
 		for (Object[] newRow : data.getBufferRows()){
-			CompositeValues newVal = new CompositeValues(newRow,data.getKeysRowIdx());
-			if (data.getLookupMapping().containsKey(newVal)){
+			if (!data.putKeyInMap(newRow,null)){
 				continue;
-			} 
-			data.getLookupMapping().put(newVal, null);
-			//Add new Key when relying on TABLEMAX to generate keys
-			Object[] v;
-			if (meta.isTableMax()){
-				v = Arrays.copyOf(newVal.getValues(),newVal.getValues().length+1);
-				v[newVal.getValues().length] = data.getNextKey();
-			} else {
-				v = newVal.getValues();
 			}
-			data.addBatchInsert(meta, v);
+
+			//Append Key when managed by TABLEMAX
+			if (meta.isTableMax()){
+				//fetch the newest Key (still to do...)
+				//newKey = ...
+				//newRow[getInputRowMeta().size()] = newKey; 
+			} 
+
+			data.addBatchInsert(meta, newRow);
+			incrementLinesOutput();
 			queryParams.add(newRow);
 		}
 		
  
 		
-		/***** step-4 --> Execute batch and query for all new PKeys, if OK: commit ******/
+		/***** step-4 --> Execute batch and fill Map with all new PKeys, if OK: commit ******/
 		//WITH THIS CHECK, MAY BE GOOD FOR MULTI-THREADED SUPPORT!!!
 		data.executeBatchInsert(meta, queryParams.size());
+		
 		int rowsAdded = data.populateMap(queryParams,meta.getBufferSize());		
 		if (rowsAdded != queryParams.size()){
 			data.db.rollback();
-			throw new IllegalStateException("DB state error, nb of new keys found= " 
+			throw new IllegalStateException("DB state error, nb of new keys loaded= " 
 								+ rowsAdded + " but expecting= " + queryParams.size() );
 		}
 		//process remaining of Buffer with new Mapping
-		processBufferAndSendRows(getInputRowMeta().size(),true);
+		processBufferAndSendRows(getInputRowMeta().size());
 		//At this point all is safe, we commit
 		data.db.commit();
 
@@ -197,7 +196,7 @@ public class LoadLink extends BaseStep implements StepInterface {
 	}
 	
 	
-	private void processBufferAndSendRows(int newKeyPos, boolean processingNew) throws KettleStepException{
+	private void processBufferAndSendRows(int newKeyPos) throws KettleStepException{
 		// using Iterator to remove safely existing rows
 		Iterator<Object[]> iter = data.getBufferRows().iterator();
 		while (iter.hasNext()) {
@@ -206,11 +205,6 @@ public class LoadLink extends BaseStep implements StepInterface {
 			if (key != null) {
 				r[newKeyPos] = key;
 				putRow(data.outputRowMeta, r);
-				if (processingNew){
-					incrementLinesOutput();	
-				} else {
-					incrementLinesSkipped();
-				}
 				iter.remove();
 			}
 		}
@@ -282,8 +276,8 @@ public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 			} else {
 				data.db.rollback();
 			}
-			//data.db.closePreparedStatement(data.getPrepStmtLookup());
-			//data.db.closePreparedStatement(data.getPrepStmtInsertSat());
+			data.db.closePreparedStatement(data.getPrepStmtLookup());
+			data.db.closePreparedStatement(data.getPrepStmtInsert());
 			//data.db.closePreparedStatement(data.getPrepStmtUpdateSat());	
 		} catch (KettleDatabaseException e) {
 			logError(BaseMessages.getString(PKG, "Load.Log.UnexpectedError") + " : " + e.toString());

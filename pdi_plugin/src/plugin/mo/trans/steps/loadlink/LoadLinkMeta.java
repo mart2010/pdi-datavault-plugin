@@ -95,6 +95,7 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 			VariableSpace space, Repository repository, IMetaStore metaStore) throws KettleStepException {
 
 		ValueMetaInterface v = new ValueMetaInteger(getNewKeyFieldName());
+		v.setName(getNewKeyFieldName());
 		v.setLength(10);
 		v.setPrecision(0);
 		v.setOrigin(origin);
@@ -147,7 +148,6 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 			throws KettleException {
 		try {
 			super.saveRep(rep, metaStore, id_transformation, id_step);
-			//..
 			rep.saveStepAttribute(id_transformation, id_step, "techKeyCol", techKeyCol);
 			rep.saveStepAttribute(id_transformation, id_step, "keyGeneration", keyGeneration);
 			rep.saveStepAttribute(id_transformation, id_step, "sequenceName", sequenceName);

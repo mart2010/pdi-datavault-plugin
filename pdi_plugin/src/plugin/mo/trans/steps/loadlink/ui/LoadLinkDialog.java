@@ -38,6 +38,7 @@ import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
@@ -88,8 +89,8 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 	private Label wlBatchSize;
 	private Text wBatchSize;
 
-	private Label wlSurrKey;
-	private CCombo wSurrKey;
+	private Label wlTechKey;
+	private CCombo wTechKey;
 
 	private Group gSurrGroup;
 	private FormData fdSurrGroup;
@@ -107,8 +108,14 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 	private Label wlKey;
 	private TableView wKey;
 
-	private Label wlCreationDateCol;
-	private Text wCreationDateCol;
+	private Label wlAuditDTSCol;
+	private CCombo wAuditDTSCol;
+
+	private Label wlAuditRecSrcCol;
+	private CCombo wAuditRecSrcCol;
+	
+	private Label wlAuditRecSrcVal;
+	private Text wAuditRecSrcVal;
 
 	private Button wGet;
 	private Listener lsGet;
@@ -325,25 +332,92 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 		setButtonPositions(new Button[] { wOK, wCancel, wGet }, margin, null);
 
-		// Creation Date :
-		wlCreationDateCol = new Label(shell, SWT.RIGHT);
-		wlCreationDateCol.setText(BaseMessages.getString(PKG, "LoadDialog.CreationDateField.Label"));
-		props.setLook(wlCreationDateCol);
+		// Audit RecSrc
+		// RecSrc Value ...
+		wlAuditRecSrcVal = new Label(shell, SWT.RIGHT);
+		wlAuditRecSrcVal.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcVal.Label"));
+		props.setLook(wlAuditRecSrcVal);
+		FormData fdlRcVal = new FormData();
+		fdlRcVal.left = new FormAttachment(0, 0);
+		fdlRcVal.right = new FormAttachment(middle, -margin);
+		fdlRcVal.bottom = new FormAttachment(wOK, -4*margin);
+		wlAuditRecSrcVal.setLayoutData(fdlRcVal);
+		
+		wAuditRecSrcVal = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		props.setLook(wAuditRecSrcVal);
+		wAuditRecSrcVal.addModifyListener(lsMod);
+		FormData fdRcVal = new FormData();
+		fdRcVal.bottom = new FormAttachment(wOK, -4*margin);
+		fdRcVal.left = new FormAttachment(middle, 0);
+		fdRcVal.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
+		wAuditRecSrcVal.setLayoutData(fdRcVal);
+
+		//RecSrc Col
+		wlAuditRecSrcCol = new Label(shell, SWT.RIGHT);
+		wlAuditRecSrcCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcCol.Label"));
+		props.setLook(wlAuditRecSrcCol);
+		FormData fdlRecSrcField = new FormData();
+		fdlRecSrcField.left = new FormAttachment(0, 0);
+		fdlRecSrcField.right = new FormAttachment(middle, -margin);
+		fdlRecSrcField.bottom = new FormAttachment(wAuditRecSrcVal, -margin);
+		wlAuditRecSrcCol.setLayoutData(fdlRecSrcField);
+		
+		wAuditRecSrcCol = new CCombo(shell, SWT.BORDER );
+		wAuditRecSrcCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditRecField.Tooltip"));
+		props.setLook(wAuditRecSrcCol);
+		wAuditRecSrcCol.addModifyListener(lsMod);
+		FormData fdRecSrcField = new FormData();
+		fdRecSrcField.left = new FormAttachment(middle, 0);
+		fdRecSrcField.right = new FormAttachment(100, 0);
+		fdRecSrcField.bottom = new FormAttachment(wAuditRecSrcVal, -margin);
+		wAuditRecSrcCol.setLayoutData(fdRecSrcField);
+		wAuditRecSrcCol.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				String t = wAuditRecSrcCol.getText();
+				setColumnsCombo(wAuditRecSrcCol, ValueMetaInterface.TYPE_STRING, -1);
+				shell.setCursor(null);
+				wAuditRecSrcCol.setText(t);
+				busy.dispose();
+			}
+		});
+
+		
+		// Audit DTS :
+		wlAuditDTSCol = new Label(shell, SWT.RIGHT);
+		wlAuditDTSCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Label"));
+		props.setLook(wlAuditDTSCol);
 		FormData fdlLastUpdateField = new FormData();
 		fdlLastUpdateField.left = new FormAttachment(0, 0);
 		fdlLastUpdateField.right = new FormAttachment(middle, -margin);
-		fdlLastUpdateField.bottom = new FormAttachment(wOK, -2 * margin);
-		wlCreationDateCol.setLayoutData(fdlLastUpdateField);
-		wCreationDateCol = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wCreationDateCol);
-		wCreationDateCol.addModifyListener(lsMod);
+		fdlLastUpdateField.bottom = new FormAttachment(wAuditRecSrcCol, -margin);
+		wlAuditDTSCol.setLayoutData(fdlLastUpdateField);
+		
+		wAuditDTSCol = new CCombo(shell, SWT.BORDER );
+		wAuditDTSCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Tooltip"));
+		props.setLook(wAuditDTSCol);
+		wAuditDTSCol.addModifyListener(lsMod);
 		FormData fdLastUpdateField = new FormData();
 		fdLastUpdateField.left = new FormAttachment(middle, 0);
 		fdLastUpdateField.right = new FormAttachment(100, 0);
-		fdLastUpdateField.bottom = new FormAttachment(wOK, -2 * margin);
-		wCreationDateCol.setLayoutData(fdLastUpdateField);
+		fdLastUpdateField.bottom = new FormAttachment(wAuditRecSrcCol, -margin);
+		wAuditDTSCol.setLayoutData(fdLastUpdateField);
+		wAuditDTSCol.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				String t = wAuditDTSCol.getText();
+				setColumnsCombo(wAuditDTSCol, ValueMetaInterface.TYPE_DATE, ValueMetaInterface.TYPE_TIMESTAMP);
+				shell.setCursor(null);
+				wAuditDTSCol.setText(t);
+				busy.dispose();
+			}
+		});
 
-
+		
 		// Creation of surrogate key
 		gSurrGroup = new Group(shell, SWT.SHADOW_ETCHED_IN);
 		gSurrGroup.setText(BaseMessages.getString(PKG, "LoadDialog.SurrGroup.Label"));
@@ -351,7 +425,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		gSurrGroup.setLayout(gridLayout);
 		fdSurrGroup = new FormData();
 		fdSurrGroup.left = new FormAttachment(middle, 0);
-		fdSurrGroup.bottom = new FormAttachment(wCreationDateCol, -margin);
+		fdSurrGroup.bottom = new FormAttachment(wAuditDTSCol, -margin);
 		fdSurrGroup.right = new FormAttachment(100, 0);
 		gSurrGroup.setBackground(shell.getBackground());
 
@@ -420,31 +494,31 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		setAutoincUse();
 
 		
-		// Surrogate key column:
-		wlSurrKey = new Label(shell, SWT.RIGHT);
-		wlSurrKey.setText(BaseMessages.getString(PKG, "LoadLinkDialog.SurrKey.Label"));
-		props.setLook(wlSurrKey);
+		// Tech/surr key column:
+		wlTechKey = new Label(shell, SWT.RIGHT);
+		wlTechKey.setText(BaseMessages.getString(PKG, "LoadLinkDialog.SurrKey.Label"));
+		props.setLook(wlTechKey);
 		FormData fdlTk = new FormData();
 		fdlTk.left = new FormAttachment(0, 0);
 		fdlTk.right = new FormAttachment(middle, -margin);
 		fdlTk.bottom = new FormAttachment(gSurrGroup, -margin);
-		wlSurrKey.setLayoutData(fdlTk);
+		wlTechKey.setLayoutData(fdlTk);
 
-		wSurrKey = new CCombo(shell, SWT.BORDER | SWT.READ_ONLY);
-		props.setLook(wSurrKey);
+		wTechKey = new CCombo(shell, SWT.BORDER | SWT.READ_ONLY);
+		props.setLook(wTechKey);
 		// set its listener
-		wSurrKey.addModifyListener(lsMod);
+		wTechKey.addModifyListener(lsMod);
 		FormData fdTk = new FormData();
 		fdTk.left = new FormAttachment(middle, 0);
 		fdTk.bottom = new FormAttachment(gSurrGroup, -margin);
 		fdTk.right = new FormAttachment(100, 0);
-		wSurrKey.setLayoutData(fdTk);
-		wSurrKey.addFocusListener(new FocusListener() {
+		wTechKey.setLayoutData(fdTk);
+		wTechKey.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent arg0) {}
 			public void focusGained(FocusEvent arg0) {
 				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
 				shell.setCursor(busy);
-				setColumnsCombo();
+				setColumnsCombo(wTechKey, ValueMetaInterface.TYPE_INTEGER,-1);
 				shell.setCursor(null);
 				busy.dispose();
 			}
@@ -455,7 +529,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		fdKey.left = new FormAttachment(0, 0);
 		fdKey.top = new FormAttachment(wlKey, margin);
 		fdKey.right = new FormAttachment(100, 0);
-		fdKey.bottom = new FormAttachment(wSurrKey, -margin);
+		fdKey.bottom = new FormAttachment(wTechKey, -margin);
 		wKey.setLayoutData(fdKey);
 
 		//
@@ -513,8 +587,11 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		wLinkTable.addSelectionListener(lsDef);
 		wBatchSize.addSelectionListener(lsDef);
 		wSeq.addSelectionListener(lsDef);
-		wSurrKey.addSelectionListener(lsDef);
-
+		wTechKey.addSelectionListener(lsDef);
+		wAuditDTSCol.addSelectionListener(lsDef);
+		wAuditRecSrcCol.addSelectionListener(lsDef);
+		wAuditRecSrcVal.addSelectionListener(lsDef);
+		
 		// Detect X or ALT-F4 or something that kills this window...
 		shell.addShellListener(new ShellAdapter() {
 			public void shellClosed(ShellEvent e) {
@@ -620,16 +697,25 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 	}
 
 	
-	private void setColumnsCombo() {
+	private void setColumnsCombo(CCombo combo, int filterType1, int filterType2) {
 		// clear and reset..
-		wSurrKey.removeAll();
-
+		combo.removeAll();
 		RowMetaInterface surCols = null;
+
+		//ValueMetaInterface
 		surCols = getColumnsFromCache(wSchema.getText(),wLinkTable.getText() );	
 		
 		if (surCols != null){
 			for (int i = 0; i < surCols.getFieldNames().length; i++){
-				wSurrKey.add(surCols.getFieldNames()[i]);
+				if (filterType1 != -1 ){
+					if (filterType1 == surCols.getValueMeta(i).getType()){
+						combo.add(surCols.getFieldNames()[i]);	
+					} else if (filterType2 != -1 && filterType2 == surCols.getValueMeta(i).getType()){
+						combo.add(surCols.getFieldNames()[i]);
+					}
+				} else {
+					combo.add(surCols.getFieldNames()[i]);	
+				}
 			}
 		} 
 	}
@@ -734,11 +820,22 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		}
 
 		if (inputMeta.getTechKeyCol() != null) {
-			wSurrKey.setText(inputMeta.getTechKeyCol());
+			wTechKey.setText(inputMeta.getTechKeyCol());
 		}
 
-		wCreationDateCol.setText(Const.NVL(inputMeta.getAuditDtsCol(), ""));
+		if (inputMeta.getAuditDtsCol() != null) {
+			wAuditDTSCol.setText(inputMeta.getAuditDtsCol());
+		}
 
+		if (inputMeta.getAuditRecSourceCol() != null){
+			wAuditRecSrcCol.setText(inputMeta.getAuditRecSourceCol());
+		}
+
+		if (inputMeta.getAuditRecSourceValue() != null){
+			wAuditRecSrcVal.setText(inputMeta.getAuditRecSourceValue());
+		}
+
+		
 		String surrKeyCreation = inputMeta.getKeyGeneration();
 
 		if (LoadLinkMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
@@ -798,8 +895,10 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		in.setDatabaseMeta(transMeta.findDatabase(wConnection.getText()));
 		in.setSchemaName(wSchema.getText());
 		in.setTargetTable(wLinkTable.getText());
-		in.setTechKeyCol(wSurrKey.getText());
-		
+		in.setTechKeyCol(wTechKey.getText());
+		in.setAuditDtsCol(wAuditDTSCol.getText());
+		in.setAuditRecSourceCol(wAuditRecSrcCol.getText());
+		in.setAuditRecSourceValue(wAuditRecSrcVal.getText());
 		in.setBufferSize(Const.toInt(wBatchSize.getText(), 0));
 
 		int nb = wKey.nrNonEmpty();
@@ -824,7 +923,8 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 			in.setKeyGeneration(LoadHubMeta.CREATION_METHOD_TABLEMAX);
 		}
 
-		in.setAuditDtsCol(wCreationDateCol.getText());
+		
+		
 		
 	}
 
@@ -845,7 +945,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 					if (d != null) {
 						wSchema.setText(Const.NVL(d, ""));
 						setTableFieldCombo();
-						setColumnsCombo();
+						//setColumnsCombo();
 					}
 				} else {
 					MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
@@ -879,7 +979,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 				wSchema.setText(Const.NVL(std.getSchemaName(), ""));
 				wLinkTable.setText(Const.NVL(std.getTableName(), ""));
 				setTableFieldCombo();
-				setColumnsCombo();
+				//setColumnsCombo();
 			}
 		} else {
 			MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
