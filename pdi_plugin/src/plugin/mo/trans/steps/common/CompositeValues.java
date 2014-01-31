@@ -63,9 +63,9 @@ public class CompositeValues implements Comparable<CompositeValues>{
 
 	
 	/**
-	 * Used to only consider the first n values in row  
-	 * starting at some index.  Convenient when ResultSet 
-	 * returns Array with empty columns appended at end
+	 * Used to only consider the first n values in row  starting at from index.  
+	 * Convenient when ResultSet returns longer Array with empty 
+	 * columns appended at end
 	 * @param fullrow
 	 * @param from 
 	 * 		starting index (0-based)

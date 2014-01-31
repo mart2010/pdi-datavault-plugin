@@ -57,7 +57,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	
 	// hold the real schema name (after any var substitution)
 	private String realSchemaName;
-	// hold the name schema.table
+	// hold the name schema.table (after any var substitution)
 	private String qualifiedTable;
 
 	// position index of composite key fields in row stream
@@ -75,9 +75,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	// hold the lookup record (key(s) --> PKey)
 	private Map<CompositeValues, Long> lookupMapping;
 	
-	// used with CREATION_METHOD_TABLEMAX 
-	private long curSeqKey;
-
+	
 	public boolean finishedAllRows = false;
 	
 	private LogChannelInterface log;
@@ -98,7 +96,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 
 	/*
-	 * Must be called prior any row processing 
+	 * Must be called prior to Prepared Stmt init and any row processing 
 	 */
 	public void initializeRowProcessing(BaseLoadMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {		
 		if (bufferRows == null) {
@@ -108,7 +106,14 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			int capacity = (int) ((meta.getBufferSize())/0.75+1);
 			lookupMapping = new HashMap<CompositeValues, Long>(capacity);
 		}
-		this.initRowIdx(meta,inputRowMeta);
+		initRowIdx(meta,inputRowMeta);
+		
+		
+		//initialize all naming needing variable substitution (${var})
+		realSchemaName = meta.getDatabaseMeta().environmentSubstitute(meta.getSchemaName());
+		String realtable = meta.getDatabaseMeta().environmentSubstitute(meta.getTargetTable());
+		qualifiedTable = meta.getDatabaseMeta().getQuotedSchemaTableCombination(realSchemaName, realtable);
+		
 	}
 
 	public Long getKeyfromMap(Object[] originalRow) {
@@ -143,7 +148,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	public int populateMap(List<Object[]> rows, int nbParamsClause) throws KettleDatabaseException {
 		//clean-up previous map
 		lookupMapping.clear();
-			
+		
 		// Setting values for prepared Statement
 		for (int i = 0; i < nbParamsClause; i++) {
 			Object[] p;
@@ -170,6 +175,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 
 		for (Object[] r : db.getRows(rs, nbParamsClause, null)) {
+			log.logBasic("just before getRows with object r:" + Arrays.deepToString(r));
 			CompositeValues v = new CompositeValues(r,1,keysRowIdx.length);
 			lookupMapping.put(v, (Long) r[0]);
 		}			
@@ -212,15 +218,15 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 				//TODO: put and share LoadLinkMeta.IDENTIFYING_KEY into Hub instead 
 				if (colType.equals(LoadLinkMeta.IDENTIFYING_KEY)){
 					if (keyCounter == 0){
-						endClause.append(db.getDatabaseMeta().quoteField(meta.getCols()[i])).append(" = ? ");
+						endClause.append(db.getDatabaseMeta().quoteField(meta.getCols()[i])).append("=?");
 					} else {
-						endClause.append(" AND ").append(db.getDatabaseMeta().quoteField(meta.getCols()[i])).append(" = ? ");
+						endClause.append(" AND ").append(db.getDatabaseMeta().quoteField(meta.getCols()[i])).append("=?");
 					}
 					// add Meta of key(s) col 
 					if (j == 0) {
 						nkcols.append(", ").append(db.getDatabaseMeta().quoteField(meta.getCols()[i]));
 						int tmpMetatype = inputRowMeta.getValueMeta(keysRowIdx[keyCounter]).getType();
-						lookupRowMeta.addValueMeta(i, new ValueMeta(meta.getCols()[i], tmpMetatype));
+						lookupRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], tmpMetatype));
 					}
 					keyCounter++;
 				}
@@ -250,8 +256,6 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	public void initPrepStmtInsert(BaseLoadMeta meta, String keyGeneration, 
 					String sequence, RowMetaInterface inputRowMeta) throws KettleDatabaseException {
 
-		//insertRowMeta reusing same composite keys as lookup and adding more fields 
-		insertRowMeta = lookupRowMeta.clone();
 
 		/*
 		 * This applied for both Hub and Link:
@@ -267,11 +271,12 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		 *  
 		 */
 
+		insertRowMeta = new RowMeta();
 		String sqlIns = "INSERT INTO " + qualifiedTable + "( ";
 		String sqlValues = Const.CR + " VALUES (";
 	
 		// ***********************************************
-		// 1- Handle composite keys
+		// 1- Handle composite keys 
 		// ***********************************************
 		int keyCounter = 0;
 		for (int i = 0; i < meta.getCols().length; i++) {
@@ -283,6 +288,8 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 					sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 					sqlValues += ", ?";
 				}
+				int tmpMetatype = inputRowMeta.getValueMeta(keysRowIdx[keyCounter]).getType();
+				insertRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], tmpMetatype));
 				keyCounter++;
 			}
 		}
@@ -297,7 +304,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 				sqlValues += ", ?";
 				
 				int tmpMetatype = inputRowMeta.getValueMeta(nonekeysRowIdx[nonekeyCounter]).getType();
-				insertRowMeta.addValueMeta(keyCounter+nonekeyCounter, new ValueMeta(meta.getCols()[i], tmpMetatype));
+				insertRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], tmpMetatype));
 				nonekeyCounter++;
 			}
 		}
@@ -348,7 +355,8 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			throw new KettleDatabaseException(ex);
 		}
 	}
-	
+
+	/*
 	//only used with method TABLEMAX
 	//This should be called from a synchronized block in the Step class
 	public void initSelectMax(String pKey, RowMetaInterface inputRowMeta, BaseStepMeta meta)
@@ -375,14 +383,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			} catch (SQLException e) {
 				throw new KettleDatabaseException(e);
 			}
-		
 	}
+	*/
 	
-	public Long getNextKey(){
-		curSeqKey++;
-		return Long.valueOf(curSeqKey);
-	}
-
 	
 	private void initRowIdx(BaseLoadMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {
 		int nbKey = 0;
@@ -429,42 +432,50 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	}
 	
 	
-	public void addBatchInsert(BaseLoadMeta meta, Object[] oriRow) throws KettleDatabaseException {		
+	public void addBatchInsert(BaseLoadMeta meta, Object[] oriRow, Long newKey) throws KettleDatabaseException {		
 		try {
 		
 			// ***********************************************
 			// 1- Handle composite keys 
 			// ***********************************************
+			int pIdx = 0;
 			for (int i = 0; i < keysRowIdx.length; i++) {
-				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(i),oriRow[keysRowIdx[i]],i+1);
+				pIdx = insertRowMeta.indexOfValue(meta.getCols()[keysRowIdx[i]]);
+				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[keysRowIdx[i]],pIdx+1);
+				log.logBasic("values keys:" + oriRow[keysRowIdx[i]] + " at pos =" + pIdx);
 			}
-			
+
 			// ***********************************************
 			// 2- Handle other optional columns
 			// ***********************************************
-			int sIdx = keysRowIdx.length;
 			for (int i = 0; i < nonekeysRowIdx.length; i++) {
-				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(sIdx+i),oriRow[nonekeysRowIdx[i]],sIdx+i+1);
+				pIdx = insertRowMeta.indexOfValue(meta.getCols()[nonekeysRowIdx[i]]);
+				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[nonekeysRowIdx[i]],pIdx+1);
+				log.logBasic("values other:" + oriRow[nonekeysRowIdx[i]] + " at pos =" + pIdx);
 			}
 			
 			// ***********************************************
 			// 3- Handle audit columns
 			// ***********************************************
-			sIdx = keysRowIdx.length + nonekeysRowIdx.length;
 			if (!Const.isEmpty(meta.getAuditDtsCol())){
-				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(sIdx),getNowDate(true),sIdx+1);
-				sIdx++;
+				pIdx = insertRowMeta.indexOfValue(meta.getAuditDtsCol());
+				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),getNowDate(true),pIdx+1);
+				log.logBasic("audit :" + getNowDate(true));
+
 			}
 			if (!Const.isEmpty(meta.getAuditRecSourceCol())){
-				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(sIdx),meta.getAuditRecSourceValue(),sIdx+1);
-				sIdx++;
+				pIdx = insertRowMeta.indexOfValue(meta.getAuditRecSourceCol());
+				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),meta.getAuditRecSourceValue(),pIdx+1);
+				log.logBasic("audit src:" + meta.getAuditRecSourceValue());
 			}
 			
 			// ***********************************************
 			// 4- Handle technical key (PK)
 			// ***********************************************
 			if (meta.isTableMax()){
-				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(sIdx),meta.getAuditRecSourceValue(),sIdx+1);
+				pIdx = insertRowMeta.indexOfValue(meta.getTechKeyCol());
+				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),newKey,pIdx+1);
+				log.logBasic("tech key:" + newKey + "  at pos=" + pIdx);
 			}
 			prepStmtInsert.addBatch();
 		
@@ -479,7 +490,8 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	
 	public void executeBatchInsert(BaseStepMeta meta, int insertCtnExpected) throws KettleDatabaseException {
         try {
-        	prepStmtInsert.executeBatch();
+        	int[] r = prepStmtInsert.executeBatch();
+        	log.logError("FFFFFFFFSuccessfully executed insert batch with " + r.length);
         	prepStmtInsert.clearBatch();
     		if (log.isDebug()){
     			log.logDebug("Successfully executed insert batch");
@@ -513,23 +525,14 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	}
 
 
-
 	public String getRealSchemaName() {
 		return realSchemaName;
 	}
-	public void setRealSchemaName(DatabaseMeta dbMeta, String uiEntrySchemaName) {
-		this.realSchemaName = dbMeta.environmentSubstitute(uiEntrySchemaName);
-	}
-
+	
 	public String getQualifiedTable() {
 		return qualifiedTable;
 	}
-	public void setQualifiedTable(DatabaseMeta dbMeta, String uiEntryLinkTable) {
-		//TODO: verify this works... as envSubs normally called from Step code.   
-		// replace potential ${var} with subs env. values
-		String realtable = dbMeta.environmentSubstitute(uiEntryLinkTable);
-		qualifiedTable = dbMeta.getQuotedSchemaTableCombination(realSchemaName, realtable);
-	}
+	
 
 	public List<Object[]> getBufferRows() {
 		return bufferRows;

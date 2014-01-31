@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
@@ -126,6 +127,7 @@ public class LoadLink extends BaseStep implements StepInterface {
 
 		int nbLookup = data.populateMap(data.getBufferRows(),meta.getBufferSize());
 		
+		log.logBasic("Frist lookup return no of ele:" + nbLookup);
 		
 		/***** step-2 --> Manage existing link: add key field, send downstream & remove from buffer *****/
 		
@@ -143,7 +145,8 @@ public class LoadLink extends BaseStep implements StepInterface {
 		}
 		
 		/***** step-3 --> Add new rows to Batch while updating LookupMap ******/
-		
+		//needed for TABLEMAX only
+		Long newKey = null;
 		List<Object[]> queryParams = new ArrayList<Object[]>(meta.getBufferSize()+10);
 		for (Object[] newRow : data.getBufferRows()){
 			if (!data.putKeyInMap(newRow,null)){
@@ -153,11 +156,13 @@ public class LoadLink extends BaseStep implements StepInterface {
 			//Append Key when managed by TABLEMAX
 			if (meta.isTableMax()){
 				//fetch the newest Key (still to do...)
-				//newKey = ...
-				//newRow[getInputRowMeta().size()] = newKey; 
+				newKey = data.db.getNextValue( getTrans().getCounters(), meta.getSchemaName(),
+						 		meta.getTargetTable(), meta.getTechKeyCol());
+				log.logBasic("Adding new row with TABLEMAX with key:" + newKey);
 			} 
-
-			data.addBatchInsert(meta, newRow);
+			
+			data.addBatchInsert(meta, newRow, newKey);
+			log.logBasic("Adding batch with newRow= " + Arrays.deepToString(newRow) + " abn bewKey=" + newKey);
 			incrementLinesOutput();
 			queryParams.add(newRow);
 		}
@@ -234,10 +239,8 @@ public boolean init(StepMetaInterface sii, StepDataInterface sdi) {
 				logError(BaseMessages.getString(PKG, "Load.Init.ConnectionMissing", getStepname()));
 				return false;
 			}
-			data.setRealSchemaName(meta.getDatabaseMeta(), meta.getSchemaName());
-			data.setQualifiedTable(meta.getDatabaseMeta(), meta.getTargetTable());
-
 			data.db = new Database(this, meta.getDatabaseMeta());
+			//Is this to allow using "environmentSubstitute" to work inside Database class?
 			data.db.shareVariablesWith(this);
 			
 			try {
@@ -274,7 +277,7 @@ public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 			if (getErrors() == 0) {
 				data.db.commit();
 			} else {
-				data.db.rollback();
+				//data.db.rollback();
 			}
 			data.db.closePreparedStatement(data.getPrepStmtLookup());
 			data.db.closePreparedStatement(data.getPrepStmtInsert());

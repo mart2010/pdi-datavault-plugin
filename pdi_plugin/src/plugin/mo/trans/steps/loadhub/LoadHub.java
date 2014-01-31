@@ -391,6 +391,7 @@ public class LoadHub extends BaseStep implements StepInterface {
 				return false;
 			}
 
+			//REMOVE AND DO AS THE STEP LOADLINK AND LOADHUBLINKDATA
 			data.setRealSchemaName(meta.getDatabaseMeta(), meta.getSchemaName());
 			data.setQualifiedHubTable(meta.getDatabaseMeta(), meta.getHubTable());
 
