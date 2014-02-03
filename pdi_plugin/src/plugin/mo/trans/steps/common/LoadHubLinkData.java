@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.pentaho.di.compatibility.ValueInteger;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -145,7 +146,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	 * @return number of row with successful lookup
 	 * @throws KettleDatabaseException 
 	 */
-	public int populateMap(List<Object[]> rows, int nbParamsClause) throws KettleDatabaseException {
+	public int populateMap(BaseLoadMeta meta, List<Object[]> rows, int nbParamsClause) throws KettleDatabaseException {
 		//clean-up previous map
 		lookupMapping.clear();
 		
@@ -160,7 +161,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			}
 			for (int j = 0; j < keysRowIdx.length; j++) {
 				int pIdx = (i * keysRowIdx.length) + (j + 1);
-				db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(j),
+				//IMPORTANT: rely on key params of lookupRowMeta located 
+				// after TechKeyCol (hence j+1) with same order as in UI 
+				db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(j+1),
 						(p == null) ? null : p[keysRowIdx[j]], pIdx);
 			}
 		}
@@ -174,7 +177,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			throw new KettleDatabaseException("Unable to execute Lookup query", e);
 		}
 
-		for (Object[] r : db.getRows(rs, nbParamsClause, null)) {
+		for (Object[] r : getLookupRows(rs, keysRowIdx.length+1, nbParamsClause)) {
 			log.logBasic("just before getRows with object r:" + Arrays.deepToString(r));
 			CompositeValues v = new CompositeValues(r,1,keysRowIdx.length);
 			lookupMapping.put(v, (Long) r[0]);
@@ -182,7 +185,37 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		return lookupMapping.size();
 	}
 
+	
+	// Not using Database.getRows() as it calls getOneRow(string sql) 
+	// which changes metaRow instance variable in Database!    
+	// This interferes with Database.getNextValue used with TABLE-MAX
+	private List<Object[]> getLookupRows(ResultSet rs, int nbcols, int maxrows) throws KettleDatabaseException {
 
+		List<Object[]> result = new ArrayList<Object[]>(maxrows);
+		boolean stop = false;
+		int n = 0;
+		try {
+			while (!stop && n < maxrows) {
+				Object[] row = new Object[nbcols];
+				if (rs.next()) {
+					for (int i = 0; i < nbcols; i++) {
+						ValueMetaInterface val = lookupRowMeta.getValueMeta(i);
+						row[i] = db.getDatabaseMeta().getValueFromResultSet(rs, val, i);
+					}
+					result.add(row);
+					n++;
+				} else {
+					stop = true;
+				}
+			}
+			db.closeQuery(rs);
+			return result;
+		} catch (Exception e) {
+			throw new KettleDatabaseException("Unable to get list of rows from ResultSet : ", e);
+		}
+	}
+	
+	
 	
 	/*
 	 * 
@@ -191,6 +224,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 				RowMetaInterface inputRowMeta) throws KettleDatabaseException {
 
 		lookupRowMeta = new RowMeta();
+		lookupRowMeta.addValueMeta(new ValueMetaInteger(meta.getTechKeyCol()));
 		
 		/*
 		 * SELECT <PK>, <compKey1>, <compKey2> .. 
@@ -199,8 +233,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		 * ( <key1> = ? AND <key2> = ?  .. ) 
 		 * OR 
 		 * ( <key1> = ? AND <key2> = ?  .. )
-		 * 
-		 * m-times (m=bufferSize)
+		 * ... m-times (m=bufferSize)
 		 */
 		
 		StringBuffer sql = new StringBuffer(meta.getBufferSize()*100);
@@ -436,46 +469,45 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		try {
 		
 			// ***********************************************
-			// 1- Handle composite keys 
+			// 1- Handle composite keys & other optional columns
 			// ***********************************************
 			int pIdx = 0;
-			for (int i = 0; i < keysRowIdx.length; i++) {
-				pIdx = insertRowMeta.indexOfValue(meta.getCols()[keysRowIdx[i]]);
-				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[keysRowIdx[i]],pIdx+1);
-				log.logBasic("values keys:" + oriRow[keysRowIdx[i]] + " at pos =" + pIdx);
+			int nonekeyCounter = 0;
+			int keyCounter = 0;
+			for (int i = 0; i < meta.getCols().length; i++) {
+				pIdx = insertRowMeta.indexOfValue(meta.getCols()[i]);
+				if (meta.getTypes()[i].equals(LoadLinkMeta.IDENTIFYING_KEY)){
+					db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[keysRowIdx[keyCounter]],pIdx+1);
+					keyCounter++;
+				}  else if (meta.getTypes()[i].equals(LoadLinkMeta.OTHER_TYPE)) {
+					db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[nonekeysRowIdx[nonekeyCounter]],pIdx+1);
+					nonekeyCounter++;
+				}
 			}
 
-			// ***********************************************
-			// 2- Handle other optional columns
-			// ***********************************************
-			for (int i = 0; i < nonekeysRowIdx.length; i++) {
-				pIdx = insertRowMeta.indexOfValue(meta.getCols()[nonekeysRowIdx[i]]);
-				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[nonekeysRowIdx[i]],pIdx+1);
-				log.logBasic("values other:" + oriRow[nonekeysRowIdx[i]] + " at pos =" + pIdx);
-			}
 			
 			// ***********************************************
-			// 3- Handle audit columns
+			// 2- Handle audit columns
 			// ***********************************************
 			if (!Const.isEmpty(meta.getAuditDtsCol())){
 				pIdx = insertRowMeta.indexOfValue(meta.getAuditDtsCol());
 				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),getNowDate(true),pIdx+1);
-				log.logBasic("audit :" + getNowDate(true));
+				//log.logBasic("audit :" + getNowDate(true));
 
 			}
 			if (!Const.isEmpty(meta.getAuditRecSourceCol())){
 				pIdx = insertRowMeta.indexOfValue(meta.getAuditRecSourceCol());
 				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),meta.getAuditRecSourceValue(),pIdx+1);
-				log.logBasic("audit src:" + meta.getAuditRecSourceValue());
+				//log.logBasic("audit src:" + meta.getAuditRecSourceValue());
 			}
 			
 			// ***********************************************
-			// 4- Handle technical key (PK)
+			// 3- Handle technical key (PK)
 			// ***********************************************
 			if (meta.isTableMax()){
 				pIdx = insertRowMeta.indexOfValue(meta.getTechKeyCol());
 				db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),newKey,pIdx+1);
-				log.logBasic("tech key:" + newKey + "  at pos=" + pIdx);
+				//log.logBasic("tech key:" + newKey + "  at pos=" + pIdx);
 			}
 			prepStmtInsert.addBatch();
 		
@@ -489,20 +521,22 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 	
 	public void executeBatchInsert(BaseStepMeta meta, int insertCtnExpected) throws KettleDatabaseException {
-        try {
-        	int[] r = prepStmtInsert.executeBatch();
-        	log.logError("FFFFFFFFSuccessfully executed insert batch with " + r.length);
+		int[] nbIns = null;
+		try {
+        	nbIns = prepStmtInsert.executeBatch();
         	prepStmtInsert.clearBatch();
     		if (log.isDebug()){
     			log.logDebug("Successfully executed insert batch");
     		}
           } catch ( BatchUpdateException ex ) {
-        	  int[] nbIns = ex.getUpdateCounts();
+        	  if (nbIns == null){
+        		  nbIns = ex.getUpdateCounts();
+        	  }
         	  if (insertCtnExpected == nbIns.length){
-        		  log.logError("BatchUpdateException raised but all rows processed", ex);
-        		  //Continue processing.  Check for SQLIntegrityConstraintViolationException 
-        		  // For Hub: business key(s) already exist (to be checked later)
-        		  // Link: either FKs already exist (if confirmed, ignore later) or FK constraint violation (then fail process...)
+        		  log.logError("BatchUpdateException raised but JDBC driver continued processing rows", ex);
+        		  //Continue processing.  Possible causes:
+        		  // For Hub: business key(s) already exist (this is checked further)
+        		  // Link: either violation of FKs unique constraint (if confirmed, ignore) or FK referential integrity (then fail process...)
         		  //To be confirmed by calling processRow()
         	  } else {
         		  log.logError("BatchUpdateException raised and NOT all rows processed",ex);

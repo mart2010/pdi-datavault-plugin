@@ -240,6 +240,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 			if (updateParams != null && updateParams.size() > 0 ){
 				for (Object[] p : updateParams){
 					addBatchToStmt(data.getPrepStmtUpdateSat(),data.getUpToDateRowMeta(), p, null);
+					incrementLinesUpdated();
 				}
 				executeBatch(data.getPrepStmtUpdateSat(),data.getUpToDateRowMeta(),updateParams.size());
 			}

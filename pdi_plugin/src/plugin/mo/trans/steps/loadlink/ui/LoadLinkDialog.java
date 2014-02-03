@@ -74,7 +74,6 @@ import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterface {
 	private static Class<?> PKG = CompositeValues.class;
 	
-
 	private CCombo wConnection;
 
 	private Label wlSchema;
@@ -115,7 +114,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 	private CCombo wAuditRecSrcCol;
 	
 	private Label wlAuditRecSrcVal;
-	private Text wAuditRecSrcVal;
+	private TextVar wAuditRecSrcVal;
 
 	private Button wGet;
 	private Listener lsGet;
@@ -343,7 +342,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		fdlRcVal.bottom = new FormAttachment(wOK, -4*margin);
 		wlAuditRecSrcVal.setLayoutData(fdlRcVal);
 		
-		wAuditRecSrcVal = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		wAuditRecSrcVal = new TextVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
 		props.setLook(wAuditRecSrcVal);
 		wAuditRecSrcVal.addModifyListener(lsMod);
 		FormData fdRcVal = new FormData();
@@ -993,7 +992,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		try {
 			RowMetaInterface r = transMeta.getPrevStepFields(stepname);
 			if (r != null && !r.isEmpty()) {
-				BaseStepDialog.getFieldsFromPrevious(r, wKey, 1, new int[] { 1, 2 }, new int[] {}, -1, -1,
+				BaseStepDialog.getFieldsFromPrevious(r, wKey, 2, new int[] { 2 }, new int[] {}, -1, -1,
 						new TableItemInsertListener() {
 							public boolean tableItemInserted(TableItem tableItem, ValueMetaInterface v) {
 								tableItem.setText(3, "N");
