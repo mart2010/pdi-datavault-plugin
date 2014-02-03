@@ -33,10 +33,10 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchor;
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorData;
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
-import plugin.mo.trans.steps.loadhub.LoadHub;
-import plugin.mo.trans.steps.loadhub.LoadHubData;
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
 import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 
@@ -108,7 +108,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 		schemaName = "";
 		satTable = "";
 		databaseMeta = null;
-		bufferSize = LoadHubMeta.MIN_BUFFER_SIZE;
+		bufferSize = LoadAnchorMeta.MIN_BUFFER_SIZE;
 		
 		allocateArray(2);
 		attField[0] = "fkey field";
@@ -387,7 +387,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 				}
 
 				
-				if (bufferSize > LoadHubMeta.MAX_SUGG_BUFFER_SIZE){
+				if (bufferSize > LoadAnchorMeta.MAX_SUGG_BUFFER_SIZE){
 					error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.BufferSize") + Const.CR;
 					cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 					remarks.add(cr);
@@ -493,8 +493,8 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 	 * Validate to avoid senseless BufferSize
 	 */
 	public void setBufferSize(int bSize) {
-		if (bSize < LoadHubMeta.MIN_BUFFER_SIZE) {
-			bufferSize = LoadHubMeta.MIN_BUFFER_SIZE;
+		if (bSize < LoadAnchorMeta.MIN_BUFFER_SIZE) {
+			bufferSize = LoadAnchorMeta.MIN_BUFFER_SIZE;
 		}
 		bufferSize = bSize ;
 	}

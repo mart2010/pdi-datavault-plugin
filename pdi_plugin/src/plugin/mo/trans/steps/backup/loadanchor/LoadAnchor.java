@@ -1,4 +1,4 @@
-package plugin.mo.trans.steps.loadhub;
+package plugin.mo.trans.steps.backup.loadanchor;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -52,16 +52,16 @@ import plugin.mo.trans.steps.common.CompositeValues;
  *        however, this is still wrong for the case with Anchor + natkey tables !! 
  *  
  */
-public class LoadHub extends BaseStep implements StepInterface {
+public class LoadAnchor extends BaseStep implements StepInterface {
 	private static Class<?> PKG = CompositeValues.class;
 
-	private LoadHubData data;
-	private LoadHubMeta meta;
+	private LoadAnchorData data;
+	private LoadAnchorMeta meta;
 
-	public LoadHub(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
+	public LoadAnchor(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
 		super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-		meta = (LoadHubMeta) getStepMeta().getStepMetaInterface();
-		data = (LoadHubData) stepDataInterface;
+		meta = (LoadAnchorMeta) getStepMeta().getStepMetaInterface();
+		data = (LoadAnchorData) stepDataInterface;
 	}
 
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
@@ -174,7 +174,7 @@ public class LoadHub extends BaseStep implements StepInterface {
 		/***** step-3 --> Handle new rows: Prepare stmt with added Surr-key and insert *****/
 
 		Long surkey_val = null;
-		if (meta.getSurrKeyCreation().equals(LoadHubMeta.CREATION_METHOD_TABLEMAX)) {
+		if (meta.getSurrKeyCreation().equals(LoadAnchorMeta.CREATION_METHOD_TABLEMAX)) {
 			surkey_val = data.getCurValueSurrKey();
 		}
 
@@ -193,9 +193,9 @@ public class LoadHub extends BaseStep implements StepInterface {
 			}
 
 			// Set the surrogate-key
-			if (meta.getSurrKeyCreation().equals(LoadHubMeta.CREATION_METHOD_TABLEMAX)) {
+			if (meta.getSurrKeyCreation().equals(LoadAnchorMeta.CREATION_METHOD_TABLEMAX)) {
 				surkey_val++;
-			} else if (meta.getSurrKeyCreation().equals(LoadHubMeta.CREATION_METHOD_SEQUENCE)) {
+			} else if (meta.getSurrKeyCreation().equals(LoadAnchorMeta.CREATION_METHOD_SEQUENCE)) {
 				surkey_val = data.db.getNextSequenceValue(data.getRealSchemaName(), meta.getSequenceName(),
 						meta.getSurrPKeyColumn());
 			} else {
@@ -321,7 +321,7 @@ public class LoadHub extends BaseStep implements StepInterface {
 		data.clearPrepStatementLookup();
 
 		// if needed, set surr-key to current
-		if (meta.getSurrKeyCreation().equals(LoadHubMeta.CREATION_METHOD_TABLEMAX)) {
+		if (meta.getSurrKeyCreation().equals(LoadAnchorMeta.CREATION_METHOD_TABLEMAX)) {
 			data.setCurValueSurrKey(surkey_val);
 		}
 
@@ -357,7 +357,7 @@ public class LoadHub extends BaseStep implements StepInterface {
 
 		// Optional Initialization: max surrogate (when applicable)
 		// this part should be synchronized?!!
-		if (meta.getSurrKeyCreation().equals(LoadHubMeta.CREATION_METHOD_TABLEMAX)) {
+		if (meta.getSurrKeyCreation().equals(LoadAnchorMeta.CREATION_METHOD_TABLEMAX)) {
 			// Method "getOneRow(string sql)" is screwed up as it changes the
 			// metaRow instance variable
 			// in the database object !!! This impacts later call done on this
@@ -431,8 +431,8 @@ public class LoadHub extends BaseStep implements StepInterface {
 	}
 
 	public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
-		meta = (LoadHubMeta) smi;
-		data = (LoadHubData) sdi;
+		meta = (LoadAnchorMeta) smi;
+		data = (LoadAnchorData) sdi;
 
 		if (data.db != null) {
 			try {

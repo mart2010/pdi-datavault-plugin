@@ -56,9 +56,9 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 
 /*
@@ -919,7 +919,7 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 			in.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_SEQUENCE);
 			in.setSequenceName(wSeq.getText());
 		} else { // TableMax
-			in.setKeyGeneration(LoadHubMeta.CREATION_METHOD_TABLEMAX);
+			in.setKeyGeneration(LoadAnchorMeta.CREATION_METHOD_TABLEMAX);
 		}
 
 		

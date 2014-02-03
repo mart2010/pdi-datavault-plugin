@@ -54,9 +54,9 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 
 /*
  * 
@@ -124,7 +124,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 	private Listener lsGet;
 
 	private ColumnInfo[] ciKey;
-	private LoadHubMeta inputMeta;
+	private LoadAnchorMeta inputMeta;
 	private DatabaseMeta dbMeta;
 	private Map<String, Integer> inputFields;
 	// used to cache columns any tables for connection.schema
@@ -138,7 +138,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 
 	public LoadHubDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
-		inputMeta = (LoadHubMeta) in;
+		inputMeta = (LoadAnchorMeta) in;
 		inputFields = new HashMap<String, Integer>();
 		cacheColumnMap = new HashMap<String, RowMetaInterface>();
 	}
@@ -466,7 +466,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		wSeq.setLayoutData(gdSeq);
 		wSeq.addFocusListener(new FocusListener() {
 			public void focusGained(FocusEvent arg0) {
-				inputMeta.setSurrKeyCreation(LoadHubMeta.CREATION_METHOD_SEQUENCE);
+				inputMeta.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_SEQUENCE);
 				wSeqButton.setSelection(true);
 				wAutoinc.setSelection(false);
 				wTableMax.setSelection(false);
@@ -879,13 +879,13 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 
 		String surrKeyCreation = inputMeta.getSurrKeyCreation();
 
-		if (LoadHubMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
+		if (LoadAnchorMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
 			wAutoinc.setSelection(true);
-		} else if ((LoadHubMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
+		} else if ((LoadAnchorMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
 			wSeqButton.setSelection(true);
 		} else { // TableMax is also the default when no creation is yet defined
 			wTableMax.setSelection(true);
-			inputMeta.setSurrKeyCreation(LoadHubMeta.CREATION_METHOD_TABLEMAX);
+			inputMeta.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_TABLEMAX);
 		}
 		if (inputMeta.getSequenceName() != null) {
 			wSeq.setText(inputMeta.getSequenceName());
@@ -913,7 +913,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 			return;
 		}
 
-		LoadHubMeta oldMetaState = (LoadHubMeta) inputMeta.clone();
+		LoadAnchorMeta oldMetaState = (LoadAnchorMeta) inputMeta.clone();
 
 		getInfo(inputMeta);
 		stepname = wStepname.getText(); // return value
@@ -933,7 +933,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 	/*
 	 * Update the Meta object according to UI widgets
 	 */
-	private void getInfo(LoadHubMeta in) {
+	private void getInfo(LoadAnchorMeta in) {
 
 		in.setDatabaseMeta(transMeta.findDatabase(wConnection.getText()));
 		in.setSchemaName(wSchema.getText());
@@ -962,12 +962,12 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		}
 
 		if (wAutoinc.getSelection()) {
-			in.setSurrKeyCreation(LoadHubMeta.CREATION_METHOD_AUTOINC);
+			in.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_AUTOINC);
 		} else if (wSeqButton.getSelection()) {
-			in.setSurrKeyCreation(LoadHubMeta.CREATION_METHOD_SEQUENCE);
+			in.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_SEQUENCE);
 			in.setSequenceName(wSeq.getText());
 		} else { // TableMax
-			in.setSurrKeyCreation(LoadHubMeta.CREATION_METHOD_TABLEMAX);
+			in.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_TABLEMAX);
 		}
 
 		// in.setRemoveNatkeyFields(wRemoveNatkey.getSelection());

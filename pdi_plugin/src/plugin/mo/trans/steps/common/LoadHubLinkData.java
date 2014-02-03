@@ -37,8 +37,8 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
-import plugin.mo.trans.steps.loadhub.LoadHubData;
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorData;
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
@@ -359,18 +359,18 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		// ***********************************************
 		// 4- Handle technical key (PK)
 		// ***********************************************
-		if (keyGeneration.equals(LoadHubMeta.CREATION_METHOD_SEQUENCE)) {
+		if (keyGeneration.equals(LoadAnchorMeta.CREATION_METHOD_SEQUENCE)) {
 			sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getTechKeyCol());
 			// Use Sequence, Oracle syntax: seqname.nextval (may need to remove Select, From dual clause..)
 			String nextStr =  db.getDatabaseMeta().getSeqNextvalSQL(sequence); // .replace("SELECT", "").replace("FROM","").replace("dual",""); 
 			sqlValues += ", " + nextStr; 
 		} 
-		else if (keyGeneration.equals(LoadHubMeta.CREATION_METHOD_TABLEMAX)) {
+		else if (keyGeneration.equals(LoadAnchorMeta.CREATION_METHOD_TABLEMAX)) {
 			sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getTechKeyCol());
 			sqlValues += ", ?";
 			insertRowMeta.addValueMeta(new ValueMetaInteger(meta.getTechKeyCol()));
 		} 
-		else if (keyGeneration.equals(LoadHubMeta.CREATION_METHOD_AUTOINC)) {
+		else if (keyGeneration.equals(LoadAnchorMeta.CREATION_METHOD_AUTOINC)) {
 			// No need to refer to Column except for placeholder special requirement (ex. Informix) 
 			//TODO: test this on Informix...
 			if (db.getDatabaseMeta().needsPlaceHolder()) {

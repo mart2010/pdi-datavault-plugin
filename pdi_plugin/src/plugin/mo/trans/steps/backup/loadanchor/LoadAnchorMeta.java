@@ -1,4 +1,4 @@
-package plugin.mo.trans.steps.loadhub;
+package plugin.mo.trans.steps.backup.loadanchor;
 
 import java.util.List;
 
@@ -42,11 +42,11 @@ import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
  * -in Check() add vallidation and sql stuff for the optional NatKey table
  * - 
  * 
- * eventueall move to annotated (but now both do not mix well)
+ * eventually move to annotated (but now both do not mix well)
  * @Step(id="LoadHubAnchorPlugin",name="Hub/AnchorLoader",image="ui/images/DPL.png",
 		description="LoadHubMeta.TypeLongDesc.HubLoader",categoryDescription="Experimental")
  */
-public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
+public class LoadAnchorMeta extends BaseStepMeta implements StepMetaInterface {
 	private static Class<?> PKG = CompositeValues.class;
 	
 	public static int MAX_SUGG_BUFFER_SIZE = 5000;
@@ -89,7 +89,7 @@ public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
 	// Which method to use for the creation of surrogate key
 	private String surrKeyCreation = null;
 
-	public LoadHubMeta() {
+	public LoadAnchorMeta() {
 		super();
 	}
 
@@ -191,7 +191,7 @@ public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
 	}
 
 	public Object clone() {
-		LoadHubMeta retval = (LoadHubMeta) super.clone();
+		LoadAnchorMeta retval = (LoadAnchorMeta) super.clone();
 		int nrkeys = natKeyField.length;
 		retval.allocateKeyArray(nrkeys);
 
@@ -471,11 +471,11 @@ public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
 	
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr, TransMeta transMeta,
 			Trans trans) {
-		return new LoadHub(stepMeta, stepDataInterface, cnr, transMeta, trans);
+		return new LoadAnchor(stepMeta, stepDataInterface, cnr, transMeta, trans);
 	}
 
 	public StepDataInterface getStepData() {
-		return new LoadHubData();
+		return new LoadAnchorData();
 	}
 
 	public StepDialogInterface getDialog(Shell shell, StepMetaInterface meta, TransMeta transMeta, String name) {
@@ -498,7 +498,7 @@ public class LoadHubMeta extends BaseStepMeta implements StepMetaInterface {
 			return false;
 		}
 
-		LoadHubMeta o = (LoadHubMeta) other;
+		LoadAnchorMeta o = (LoadAnchorMeta) other;
 
 		if (getBufferSize() != o.getBufferSize()) {
 			return false;

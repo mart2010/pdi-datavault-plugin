@@ -3,7 +3,7 @@
  *
  */
 
-package plugin.mo.trans.steps.loadhub;
+package plugin.mo.trans.steps.backup.loadanchor;
 
 
 import java.sql.PreparedStatement;
@@ -39,7 +39,7 @@ import plugin.mo.trans.steps.common.CompositeValues;
  * 
  * 
  */
-public class LoadHubData extends BaseStepData implements StepDataInterface {
+public class LoadAnchorData extends BaseStepData implements StepDataInterface {
 	private static Class<?> PKG = CompositeValues.class;
 	
 	// modified downstream rowMeta following "LoadHub" step
@@ -93,7 +93,7 @@ public class LoadHubData extends BaseStepData implements StepDataInterface {
 	// only needed when CREATION_METHOD_TABLEMAX is used
 	private long curValueSurrKey;
 
-	public LoadHubData() {
+	public LoadAnchorData() {
 		super();
 		db = null;
 
@@ -185,7 +185,7 @@ public class LoadHubData extends BaseStepData implements StepDataInterface {
 	 * Assumption: all nat-key(s) column are NOT NULLABLE, reasonable for
 	 * valid natural/business keys
 	 */
-	public void initPrepStmtLookup(LoadHubMeta meta, RowMetaInterface inputRowMeta)
+	public void initPrepStmtLookup(LoadAnchorMeta meta, RowMetaInterface inputRowMeta)
 			throws KettleDatabaseException {
 
 		DatabaseMeta dbMeta = meta.getDatabaseMeta();
@@ -269,7 +269,7 @@ public class LoadHubData extends BaseStepData implements StepDataInterface {
 		return natkeysRowIdx;
 	}
 
-	public void initNatkeysRowIdx(LoadHubMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {
+	public void initNatkeysRowIdx(LoadAnchorMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {
 
 		this.natkeysRowIdx = new int[meta.getNatKeyField().length];
 		for (int i = 0; i < meta.getNatKeyField().length; i++) {
@@ -289,7 +289,7 @@ public class LoadHubData extends BaseStepData implements StepDataInterface {
 	/*
 	 * Boolean Index used to help remove nat-key field(s) from input stream
 	 */
-	public void initRemoveFieldIndex(LoadHubMeta meta, RowMetaInterface inputRowMeta) {
+	public void initRemoveFieldIndex(LoadAnchorMeta meta, RowMetaInterface inputRowMeta) {
 		removeField = new boolean[inputRowMeta.size()];
 
 		for (int i = 0; i < inputRowMeta.size(); i++) {
@@ -304,7 +304,7 @@ public class LoadHubData extends BaseStepData implements StepDataInterface {
 	 * Initialize Stmt for inserting into Hub and optionally into Natkey Table
 	 * and initialize the corresponding RowMeta
 	 */
-	public void initPrepStmtInsert(LoadHubMeta meta, RowMetaInterface inputRowMeta)
+	public void initPrepStmtInsert(LoadAnchorMeta meta, RowMetaInterface inputRowMeta)
 			throws KettleDatabaseException {
 
 		/*

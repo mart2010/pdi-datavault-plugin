@@ -16,7 +16,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
+import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 
 /**
@@ -268,8 +268,8 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	public void setBufferSize(int bSize) {
-		if (bSize < LoadHubMeta.MIN_BUFFER_SIZE) {
-			bufferSize = LoadHubMeta.MIN_BUFFER_SIZE;
+		if (bSize < LoadAnchorMeta.MIN_BUFFER_SIZE) {
+			bufferSize = LoadAnchorMeta.MIN_BUFFER_SIZE;
 		}
 		bufferSize = bSize ;
 	}
