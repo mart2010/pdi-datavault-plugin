@@ -1,4 +1,4 @@
-package plugin.mo.trans.steps.loadlink;
+package plugin.mo.trans.steps.common;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,26 +24,31 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
-import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.common.CompositeValues;
-import plugin.mo.trans.steps.common.LoadHubLinkData;
+import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 import plugin.mo.trans.steps.loadsat.LoadSatData;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
+ * This Step is designed for loading both Hub AND Link.
  * 
+ * This is a Base class, and could be override in future.  However, the functions 
+ * for Link and Hub are similar enough to be handled by this single class.  If we 
+ * need specialized function, we may allow for override and offer hooks to subclass
+ * to implement.
  * 
- * <b>Notes on multi-threading/concurrency:</b>
+ *  
+ *  
+ * TO BE RE-ANALYZED. 
+ * 
+ * <b>Notes on Concurrency :</b>
+ * Concurrency is not managed by blocking operations requiring synchronization.  We rather left data flow and 
+ * fail at DB level.....  
+ * 
+ * Operations like DB look-up must be done serially to avoid threads generating different keys 
+ * on "missed" look-ups with same natural-key.
  * <p>
- * 
- * MAYBE ONLY TRUE WHEN USING TABLEMAX... WITH ALL MY ERROR HANDLING WITH BATCH COULD WORK!!!! TO BE RE-ANALYZED.
- * BUT STILL TRUE ABOUT BOTTLENECK AND SYNCHRONIZATION BYT MY CODE DOES NOT BLOCK BY ALLOWING DB ERRORS AND WORK AROUND THEM
- * These "Load*" plugins are not meant for "Run multiple copies..".   This is to avoid 
- * blocking long operations requiring synchronization.  Operations like DB look-up must be done 
- * serially to avoid multiple threads generating different keys for "missed" look-up on same natural-key.<b>
- * <p>
- * It turns out, these operations take large amount of time and synchronizing them is equivalent to
- * run them serially, while adding in code complexity and increasing likelihood of dead-lock.
+ * It turns out, these operations take the bulk of time and synchronizing them is equivalent to
+ * running them serially, while adding in code complexity and increasing likelihood of dead-lock.
  * <p>
  * DB Round-trip IS the single operation having the largest impact (by any factor) on Step 
  * total processing time.
@@ -69,17 +74,17 @@ import plugin.mo.trans.steps.loadsat.LoadSatMeta;
  * @author mouellet
  *
  */
-public class LoadLink extends BaseStep implements StepInterface {
+public class BaseLoadHubLink extends BaseStep implements StepInterface {
 	private static Class<?> PKG = CompositeValues.class;
 	
-	private LoadHubLinkData data;
-	private LoadLinkMeta meta;
+	protected LoadHubLinkData data;
+	protected BaseLoadMeta meta;
 	
-	public LoadLink(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
+	
+	public BaseLoadHubLink(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
 		super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-		meta = (LoadLinkMeta) getStepMeta().getStepMetaInterface();
+		meta = (BaseLoadMeta) getStepMeta().getStepMetaInterface();
 		data = (LoadHubLinkData) stepDataInterface;
-		
 	}
 
 	
@@ -126,8 +131,8 @@ public class LoadLink extends BaseStep implements StepInterface {
 		/***** step-1 --> Query DB and fill LookupMap  ******/
 
 		int nbLookup = data.populateMap(meta, data.getBufferRows(),meta.getBufferSize());
-		
-		log.logBasic("Frist lookup return no of ele:" + nbLookup);
+	
+		//log.logBasic("...lookup return no of ele:" + nbLookup);
 		
 		/***** step-2 --> Manage existing link: add key field, send downstream & remove from buffer *****/
 		
@@ -155,21 +160,22 @@ public class LoadLink extends BaseStep implements StepInterface {
 
 			//Append Key when managed by TABLEMAX
 			if (meta.isTableMax()){
-				//fetch the newest Key (still to do...)
+				//fetch the next Key (this takes care of synchronization, however it changes 
+				//rowMeta state info in Database, so we cannot call other methods like getRows()..
 				newKey = data.db.getNextValue( getTrans().getCounters(), meta.getSchemaName(),
 						 		meta.getTargetTable(), meta.getTechKeyCol());
-				log.logBasic("Adding new row with TABLEMAX with key:" + newKey);
+				//log.logBasic("Adding new row with TABLEMAX with key:" + newKey);
 			} 
 			
 			data.addBatchInsert(meta, newRow, newKey);
-			log.logBasic("Adding batch with newRow= " + Arrays.deepToString(newRow) + " abn bewKey=" + newKey);
+			//log.logBasic("Adding batch with newRow= " + Arrays.deepToString(newRow) + " abn bewKey=" + newKey);
 			incrementLinesOutput();
 			queryParams.add(newRow);
 		}
 		
  
 		
-		/***** step-4 --> Execute batch and fill Map with all new PKeys, if OK: commit ******/
+		/***** step-4 --> Execute batch, fill Map with new keys, validate and if OK: commit ******/
 		//WITH THIS CHECK, MAY BE GOOD FOR MULTI-THREADED SUPPORT!!!
 		data.executeBatchInsert(meta, queryParams.size());
 		
@@ -187,8 +193,7 @@ public class LoadLink extends BaseStep implements StepInterface {
 		//watch for program logic issues
 		if (data.getBufferRows().size() > 0 )
 			throw new IllegalStateException("Buffer should be empty, check program logic");
-			
-	
+		
 	
 		/***** step-6 --> Continue processing or Exit if no more rows expected *****/
 		if (!data.finishedAllRows) {
@@ -217,14 +222,15 @@ public class LoadLink extends BaseStep implements StepInterface {
 	
 	
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {
-		
 		data.outputRowMeta = getInputRowMeta().clone();
 		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
-	
+
+		/* example of a custom code to leave subclass handles 
 		// Initialize the row indexes of keys and none-keys...
 		if (meta.getCols() == null || meta.getCols().length < 2) {
 			throw new KettleStepException(BaseMessages.getString(PKG, "LoadLinkMeta.CheckResult.KeyFieldsIssues"));
 		}
+		*/
 		data.initializeRowProcessing((BaseLoadMeta) meta, getInputRowMeta());
 		data.initPrepStmtLookup( (BaseLoadMeta) meta, meta.getBufferSize(), getInputRowMeta());
 		data.initPrepStmtInsert( (BaseLoadMeta) meta, meta.getKeyGeneration(), meta.getSchemaName(), getInputRowMeta());
@@ -268,7 +274,7 @@ public boolean init(StepMetaInterface sii, StepDataInterface sdi) {
 	}
 	
 public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
-	meta = (LoadLinkMeta) smi;
+	meta = (BaseLoadMeta) smi;
 	data = (LoadHubLinkData) sdi;
 
 	if (data.db != null) {
@@ -277,7 +283,7 @@ public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 			if (getErrors() == 0) {
 				data.db.commit();
 			} else {
-				//data.db.rollback();
+				data.db.rollback();
 			}
 			data.db.closePreparedStatement(data.getPrepStmtLookup());
 			data.db.closePreparedStatement(data.getPrepStmtInsert());
@@ -290,8 +296,6 @@ public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 	}
 	super.dispose(smi, sdi);
 }
-
-	
 	
 	
 }

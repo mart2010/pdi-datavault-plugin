@@ -24,7 +24,7 @@ import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
  * 
  * Subclass must implement: clone(), loadXML(), check(), getStep(), 
  * getStepData(), getDialog(), complete the partial impl of reading/writing
- * and any overriden and specialized properties.
+ * and any override and specialized properties.
  * @author mouellet
  *
  */
@@ -32,6 +32,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	//TODO: remove the ones in subclass
 	protected static Class<?> PKG = CompositeValues.class;
 
+	
 	public static int MAX_SUGG_BUFFER_SIZE = 5000;	
 	public static int MIN_BUFFER_SIZE = 50;
 	
@@ -62,6 +63,11 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	public BaseLoadMeta(){
 		super();
 	}
+	
+	//Let subclass provides exact Col-type name used in UI
+	public abstract String getIdKeyTypeString();
+	public abstract String getOtherTypeString();
+	
 	
 	
 	public void setDefault() {

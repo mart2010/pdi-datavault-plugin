@@ -44,10 +44,13 @@ import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * 
- * Data object useable for both Hub and Link
+ * Data object usable for both Hub and Link
  *  
  * @author mouellet
  *
+ * TODO: 
+ * - fix when input stream set with Lazy conversion !!!
+ *  
  */
 public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	private static Class<?> PKG = CompositeValues.class;
@@ -92,7 +95,6 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		super();
 		this.log = log;
 		db = null;
-		
 	}
 
 
@@ -161,6 +163,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			}
 			for (int j = 0; j < keysRowIdx.length; j++) {
 				int pIdx = (i * keysRowIdx.length) + (j + 1);
+				//log.logBasic("Got here for j=" + j + " with keysIndex = " + keysRowIdx[j] + " with value= " + p[keysRowIdx[j]]+ " deep array of row =" + Arrays.deepToString(p));
 				//IMPORTANT: rely on key params of lookupRowMeta located 
 				// after TechKeyCol (hence j+1) with same order as in UI 
 				db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(j+1),
@@ -178,7 +181,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 
 		for (Object[] r : getLookupRows(rs, keysRowIdx.length+1, nbParamsClause)) {
-			log.logBasic("just before getRows with object r:" + Arrays.deepToString(r));
+			//log.logBasic("just before getRows with object r:" + Arrays.deepToString(r));
 			CompositeValues v = new CompositeValues(r,1,keysRowIdx.length);
 			lookupMapping.put(v, (Long) r[0]);
 		}			
@@ -221,7 +224,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	 * 
 	 */
 	public void initPrepStmtLookup(BaseLoadMeta meta, int bufferSize,
-				RowMetaInterface inputRowMeta) throws KettleDatabaseException {
+								RowMetaInterface inputRowMeta) throws KettleDatabaseException {
 
 		lookupRowMeta = new RowMeta();
 		lookupRowMeta.addValueMeta(new ValueMetaInteger(meta.getTechKeyCol()));
@@ -248,8 +251,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			int keyCounter = 0;
 			for (int i = 0; i < meta.getCols().length; i++) {
 				String colType = meta.getTypes()[i];
-				//TODO: put and share LoadLinkMeta.IDENTIFYING_KEY into Hub instead 
-				if (colType.equals(LoadLinkMeta.IDENTIFYING_KEY)){
+				if (colType.equals(meta.getIdKeyTypeString())){
 					if (keyCounter == 0){
 						endClause.append(db.getDatabaseMeta().quoteField(meta.getCols()[i])).append("=?");
 					} else {
@@ -287,8 +289,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 
 	public void initPrepStmtInsert(BaseLoadMeta meta, String keyGeneration, 
-					String sequence, RowMetaInterface inputRowMeta) throws KettleDatabaseException {
-
+								String sequence, RowMetaInterface inputRowMeta) throws KettleDatabaseException {
 
 		/*
 		 * This applied for both Hub and Link:
@@ -313,7 +314,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		// ***********************************************
 		int keyCounter = 0;
 		for (int i = 0; i < meta.getCols().length; i++) {
-			if (meta.getTypes()[i].equals(LoadLinkMeta.IDENTIFYING_KEY)){
+			if (meta.getTypes()[i].equals(meta.getIdKeyTypeString())){
 				if (keyCounter == 0){
 					sqlIns += db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 					sqlValues += "?";
@@ -332,7 +333,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		// ***********************************************
 		int nonekeyCounter = 0;
 		for (int i = 0; i < meta.getCols().length; i++) {
-			if (meta.getTypes()[i].equals(LoadLinkMeta.OTHER_TYPE)){
+			if (meta.getTypes()[i].equals(meta.getOtherTypeString())){
 				sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 				sqlValues += ", ?";
 				
@@ -424,9 +425,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		int nbKey = 0;
 		int nbNoneKey = 0;
 		for (int i = 0; i < meta.getTypes().length; i++){
-			if (meta.getTypes()[i].equals(LoadLinkMeta.IDENTIFYING_KEY)){
+			if (meta.getTypes()[i].equals(meta.getIdKeyTypeString())){
 				nbKey++;
-			} else if (meta.getTypes()[i].equals(LoadLinkMeta.OTHER_TYPE)){
+			} else if (meta.getTypes()[i].equals(meta.getOtherTypeString())){
 				nbNoneKey++;
 			}
 		}
@@ -436,14 +437,14 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		nbKey = 0;
 		nbNoneKey = 0;
 		for (int i = 0; i < meta.getTypes().length; i++) {
-			if (meta.getTypes()[i].equals(LoadLinkMeta.IDENTIFYING_KEY)){
+			if (meta.getTypes()[i].equals(meta.getIdKeyTypeString())){
 				keysRowIdx[nbKey] = inputRowMeta.indexOfValue(meta.getFields()[i]);
 				if (keysRowIdx[nbKey] < 0) {
 					throw new KettleStepException(BaseMessages.getString(PKG,
 							"Load.Exception.FieldNotFound", meta.getFields()[i]));
 				}
 				nbKey++;
-			} else if (meta.getTypes()[i].equals(LoadLinkMeta.OTHER_TYPE)){
+			} else if (meta.getTypes()[i].equals(meta.getOtherTypeString())){
 				nonekeysRowIdx[nbNoneKey] = inputRowMeta.indexOfValue(meta.getFields()[i]);
 				if (nonekeysRowIdx[nbNoneKey] < 0) {
 					throw new KettleStepException(BaseMessages.getString(PKG,
@@ -476,10 +477,10 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			int keyCounter = 0;
 			for (int i = 0; i < meta.getCols().length; i++) {
 				pIdx = insertRowMeta.indexOfValue(meta.getCols()[i]);
-				if (meta.getTypes()[i].equals(LoadLinkMeta.IDENTIFYING_KEY)){
+				if (meta.getTypes()[i].equals(meta.getIdKeyTypeString())){
 					db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[keysRowIdx[keyCounter]],pIdx+1);
 					keyCounter++;
-				}  else if (meta.getTypes()[i].equals(LoadLinkMeta.OTHER_TYPE)) {
+				}  else if (meta.getTypes()[i].equals(meta.getOtherTypeString())) {
 					db.setValue(prepStmtInsert,insertRowMeta.getValueMeta(pIdx),oriRow[nonekeysRowIdx[nonekeyCounter]],pIdx+1);
 					nonekeyCounter++;
 				}

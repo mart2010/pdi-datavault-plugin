@@ -57,6 +57,8 @@ import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.loadhub.LoadHubMeta;
+import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 
 /*
  * 
@@ -66,10 +68,8 @@ import plugin.mo.trans.steps.common.CompositeValues;
  * FormData objects define the anchor points of the widgets
  * 
  */
-
 public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface {
 	private static Class<?> PKG = CompositeValues.class;
-	
 
 	private CCombo wConnection;
 
@@ -81,22 +81,12 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 	private Label wlHubTable;
 	private Button wbHubTable;
 	private TextVar wHubTable;
-
-	private Label wlExtNatkeyTable;
-	private Button wbExtNatkeyTable;
-
-	private Label wlNatkeyTable;
-	private Button wbNatkeyTable;
-	private TextVar wNatkeyTable;
-
+	
 	private Label wlBatchSize;
 	private Text wBatchSize;
 
-	private Label wlSurrKey;
-	private CCombo wSurrKey;
-
-	private Label wlSurrForeignKey;
-	private CCombo wSurrForeignKey;
+	private Label wlTechKey;
+	private CCombo wTechKey;
 
 	private Group gSurrGroup;
 	private FormData fdSurrGroup;
@@ -111,20 +101,23 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 	private Button wSeqButton;
 	private Text wSeq;
 
-	// private Label wlRemoveNatkey;
-	// private Button wRemoveNatkey;
-
 	private Label wlKey;
 	private TableView wKey;
+	
+	private Label wlAuditDTSCol;
+	private CCombo wAuditDTSCol;
 
-	private Label wlCreationDateCol;
-	private Text wCreationDateCol;
+	private Label wlAuditRecSrcCol;
+	private CCombo wAuditRecSrcCol;
+	
+	private Label wlAuditRecSrcVal;
+	private TextVar wAuditRecSrcVal;
 
 	private Button wGet;
 	private Listener lsGet;
 
 	private ColumnInfo[] ciKey;
-	private LoadAnchorMeta inputMeta;
+	private LoadHubMeta inputMeta;
 	private DatabaseMeta dbMeta;
 	private Map<String, Integer> inputFields;
 	// used to cache columns any tables for connection.schema
@@ -138,7 +131,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 
 	public LoadHubDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
-		inputMeta = (LoadAnchorMeta) in;
+		inputMeta = (LoadHubMeta) in;
 		inputFields = new HashMap<String, Integer>();
 		cacheColumnMap = new HashMap<String, RowMetaInterface>();
 	}
@@ -251,7 +244,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		fdSchema.right = new FormAttachment(wbSchema, -margin);
 		wSchema.setLayoutData(fdSchema);
 
-		// Hub Table line...
+		// Table line...
 		wlHubTable = new Label(shell, SWT.RIGHT);
 		wlHubTable.setText(BaseMessages.getString(PKG, "LoadHubDialog.Target.Label"));
 		props.setLook(wlHubTable);
@@ -278,56 +271,6 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		fdTable.right = new FormAttachment(wbHubTable, -margin);
 		wHubTable.setLayoutData(fdTable);
 
-		// Use External Nat-key table ?
-		wlExtNatkeyTable = new Label(shell, SWT.RIGHT);
-		wlExtNatkeyTable.setText(BaseMessages.getString(PKG, "LoadHubDialog.ExtNatkey.Label"));
-		props.setLook(wlExtNatkeyTable);
-		FormData fdlExtNatTable = new FormData();
-		fdlExtNatTable.left = new FormAttachment(0, 0);
-		fdlExtNatTable.right = new FormAttachment(middle, -margin);
-		fdlExtNatTable.top = new FormAttachment(wbHubTable, margin);
-		wlExtNatkeyTable.setLayoutData(fdlExtNatTable);
-
-		wbExtNatkeyTable = new Button(shell, SWT.CHECK);
-		props.setLook(wbExtNatkeyTable);
-		FormData fdbExtNatkeyTable = new FormData();
-		fdbExtNatkeyTable.left = new FormAttachment(middle, 0);
-		fdbExtNatkeyTable.right = new FormAttachment(100, 0);
-		fdbExtNatkeyTable.top = new FormAttachment(wbHubTable, margin);
-		wbExtNatkeyTable.setLayoutData(fdbExtNatkeyTable);
-		wbExtNatkeyTable.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				enableFields();
-				setTableFieldCombo();
-			}
-		});
-
-		// Natkey table line...
-		wlNatkeyTable = new Label(shell, SWT.RIGHT);
-		wlNatkeyTable.setText(BaseMessages.getString(PKG, "LoadHubDialog.NatKeyTable.Label"));
-		props.setLook(wlNatkeyTable);
-		FormData fdlNatTable = new FormData();
-		fdlNatTable.left = new FormAttachment(0, 0);
-		fdlNatTable.right = new FormAttachment(middle, -margin);
-		fdlNatTable.top = new FormAttachment(wbExtNatkeyTable, margin);
-		wlNatkeyTable.setLayoutData(fdlNatTable);
-
-		wbNatkeyTable = new Button(shell, SWT.PUSH | SWT.CENTER);
-		props.setLook(wbNatkeyTable);
-		wbNatkeyTable.setText(BaseMessages.getString(PKG, "LoadDialog.BrowseTable.Button"));
-		FormData fdbNatTable = new FormData();
-		fdbNatTable.right = new FormAttachment(100, 0);
-		fdbNatTable.top = new FormAttachment(wbExtNatkeyTable, margin);
-		wbNatkeyTable.setLayoutData(fdbNatTable);
-
-		wNatkeyTable = new TextVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wNatkeyTable);
-		wNatkeyTable.addModifyListener(lsTableMod);
-		FormData fdNatTable = new FormData();
-		fdNatTable.left = new FormAttachment(middle, 0);
-		fdNatTable.top = new FormAttachment(wbExtNatkeyTable, margin);
-		fdNatTable.right = new FormAttachment(wbNatkeyTable, -margin);
-		wNatkeyTable.setLayoutData(fdNatTable);
 
 		// Batch size ...
 		wlBatchSize = new Label(shell, SWT.RIGHT);
@@ -336,19 +279,19 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		FormData fdlBatch = new FormData();
 		fdlBatch.left = new FormAttachment(0, 0);
 		fdlBatch.right = new FormAttachment(middle, -margin);
-		fdlBatch.top = new FormAttachment(wbNatkeyTable, margin);
+		fdlBatch.top = new FormAttachment(wHubTable, margin);
 		wlBatchSize.setLayoutData(fdlBatch);
 		wBatchSize = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
 		props.setLook(wBatchSize);
 		wBatchSize.addModifyListener(lsMod);
 		FormData fdBatch = new FormData();
-		fdBatch.top = new FormAttachment(wbNatkeyTable, margin);
+		fdBatch.top = new FormAttachment(wHubTable, margin);
 		fdBatch.left = new FormAttachment(middle, 0);
 		fdBatch.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
 		wBatchSize.setLayoutData(fdBatch);
 
 		//
-		// The Lookup fields: the natural key (business)
+		// LThe fields: keys + none-keys
 		//
 		wlKey = new Label(shell, SWT.NONE);
 		wlKey.setText(BaseMessages.getString(PKG, "LoadHubDialog.Keyfields.Label"));
@@ -359,14 +302,16 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		fdlKey.right = new FormAttachment(100, 0);
 		wlKey.setLayoutData(fdlKey);
 
-		int nrKeyCols = 2;
-		int nrKeyRows = (inputMeta.getNatKeyField() != null ? inputMeta.getNatKeyField().length : 1);
+		int nrKeyCols = 3;
+		int nrKeyRows = (inputMeta.getFields() != null ? inputMeta.getFields().length : 1);
 
 		ciKey = new ColumnInfo[nrKeyCols];
 		ciKey[0] = new ColumnInfo(BaseMessages.getString(PKG, "LoadHubDialog.ColumnInfo.TableColumn"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
 		ciKey[1] = new ColumnInfo(BaseMessages.getString(PKG, "LoadHubDialog.ColumnInfo.FieldInStream"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
+		ciKey[2] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.FieldType"),
+				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { LoadHubMeta.IDENTIFYING_KEY, LoadHubMeta.OTHER_TYPE }, false);
 		// attach the tableFieldColumns List to the widget
 		tableFieldColumns.add(ciKey[0]);
 		wKey = new TableView(transMeta, shell, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL
@@ -382,42 +327,92 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 
 		setButtonPositions(new Button[] { wOK, wCancel, wGet }, margin, null);
 
-		// Creation Date :
-		wlCreationDateCol = new Label(shell, SWT.RIGHT);
-		wlCreationDateCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Label"));
-		props.setLook(wlCreationDateCol);
+		// Audit RecSrc
+		// RecSrc Value ...
+		wlAuditRecSrcVal = new Label(shell, SWT.RIGHT);
+		wlAuditRecSrcVal.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcVal.Label"));
+		props.setLook(wlAuditRecSrcVal);
+		FormData fdlRcVal = new FormData();
+		fdlRcVal.left = new FormAttachment(0, 0);
+		fdlRcVal.right = new FormAttachment(middle, -margin);
+		fdlRcVal.bottom = new FormAttachment(wOK, -4*margin);
+		wlAuditRecSrcVal.setLayoutData(fdlRcVal);
+		
+		wAuditRecSrcVal = new TextVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		props.setLook(wAuditRecSrcVal);
+		wAuditRecSrcVal.addModifyListener(lsMod);
+		FormData fdRcVal = new FormData();
+		fdRcVal.bottom = new FormAttachment(wOK, -4*margin);
+		fdRcVal.left = new FormAttachment(middle, 0);
+		fdRcVal.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
+		wAuditRecSrcVal.setLayoutData(fdRcVal);
+
+		//RecSrc Col
+		wlAuditRecSrcCol = new Label(shell, SWT.RIGHT);
+		wlAuditRecSrcCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcCol.Label"));
+		props.setLook(wlAuditRecSrcCol);
+		FormData fdlRecSrcField = new FormData();
+		fdlRecSrcField.left = new FormAttachment(0, 0);
+		fdlRecSrcField.right = new FormAttachment(middle, -margin);
+		fdlRecSrcField.bottom = new FormAttachment(wAuditRecSrcVal, -margin);
+		wlAuditRecSrcCol.setLayoutData(fdlRecSrcField);
+		
+		wAuditRecSrcCol = new CCombo(shell, SWT.BORDER );
+		wAuditRecSrcCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditRecField.Tooltip"));
+		props.setLook(wAuditRecSrcCol);
+		wAuditRecSrcCol.addModifyListener(lsMod);
+		FormData fdRecSrcField = new FormData();
+		fdRecSrcField.left = new FormAttachment(middle, 0);
+		fdRecSrcField.right = new FormAttachment(100, 0);
+		fdRecSrcField.bottom = new FormAttachment(wAuditRecSrcVal, -margin);
+		wAuditRecSrcCol.setLayoutData(fdRecSrcField);
+		wAuditRecSrcCol.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				String t = wAuditRecSrcCol.getText();
+				setColumnsCombo(wAuditRecSrcCol, ValueMetaInterface.TYPE_STRING, -1);
+				shell.setCursor(null);
+				wAuditRecSrcCol.setText(t);
+				busy.dispose();
+			}
+		});
+
+		
+		// Audit DTS :
+		wlAuditDTSCol = new Label(shell, SWT.RIGHT);
+		wlAuditDTSCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Label"));
+		props.setLook(wlAuditDTSCol);
 		FormData fdlLastUpdateField = new FormData();
 		fdlLastUpdateField.left = new FormAttachment(0, 0);
 		fdlLastUpdateField.right = new FormAttachment(middle, -margin);
-		fdlLastUpdateField.bottom = new FormAttachment(wOK, -2 * margin);
-		wlCreationDateCol.setLayoutData(fdlLastUpdateField);
-		wCreationDateCol = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wCreationDateCol);
-		wCreationDateCol.addModifyListener(lsMod);
+		fdlLastUpdateField.bottom = new FormAttachment(wAuditRecSrcCol, -margin);
+		wlAuditDTSCol.setLayoutData(fdlLastUpdateField);
+		
+		wAuditDTSCol = new CCombo(shell, SWT.BORDER );
+		wAuditDTSCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Tooltip"));
+		props.setLook(wAuditDTSCol);
+		wAuditDTSCol.addModifyListener(lsMod);
 		FormData fdLastUpdateField = new FormData();
 		fdLastUpdateField.left = new FormAttachment(middle, 0);
 		fdLastUpdateField.right = new FormAttachment(100, 0);
-		fdLastUpdateField.bottom = new FormAttachment(wOK, -2 * margin);
-		wCreationDateCol.setLayoutData(fdLastUpdateField);
+		fdLastUpdateField.bottom = new FormAttachment(wAuditRecSrcCol, -margin);
+		wAuditDTSCol.setLayoutData(fdLastUpdateField);
+		wAuditDTSCol.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				String t = wAuditDTSCol.getText();
+				setColumnsCombo(wAuditDTSCol, ValueMetaInterface.TYPE_DATE, ValueMetaInterface.TYPE_TIMESTAMP);
+				shell.setCursor(null);
+				wAuditDTSCol.setText(t);
+				busy.dispose();
+			}
+		});
 
-		/*
-		 * too costly... // Remove Nat-key fields in the output stream?
-		 * wlRemoveNatkey = new Label(shell, SWT.RIGHT);
-		 * wlRemoveNatkey.setText(BaseMessages.getString(PKG,
-		 * "LoadHubDialog.Replace.Label")); props.setLook(wlRemoveNatkey);
-		 * FormData fdlReplace = new FormData(); fdlReplace.left = new
-		 * FormAttachment(0, 0); fdlReplace.right = new FormAttachment(middle,
-		 * -margin); fdlReplace.bottom = new FormAttachment(wCreationDateCol,
-		 * -margin); wlRemoveNatkey.setLayoutData(fdlReplace); wRemoveNatkey =
-		 * new Button(shell, SWT.CHECK); props.setLook(wRemoveNatkey); FormData
-		 * fdReplace = new FormData(); fdReplace.left = new
-		 * FormAttachment(middle, 0); fdReplace.bottom = new
-		 * FormAttachment(wCreationDateCol, -margin); fdReplace.right = new
-		 * FormAttachment(100, 0); wRemoveNatkey.setLayoutData(fdReplace);
-		 * wRemoveNatkey.addSelectionListener(new SelectionAdapter() { public
-		 * void widgetSelected(SelectionEvent e) { enableFields(); } });
-		 */
-
+		
 		// Creation of surrogate key
 		gSurrGroup = new Group(shell, SWT.SHADOW_ETCHED_IN);
 		gSurrGroup.setText(BaseMessages.getString(PKG, "LoadDialog.SurrGroup.Label"));
@@ -425,7 +420,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		gSurrGroup.setLayout(gridLayout);
 		fdSurrGroup = new FormData();
 		fdSurrGroup.left = new FormAttachment(middle, 0);
-		fdSurrGroup.bottom = new FormAttachment(wCreationDateCol, -margin);
+		fdSurrGroup.bottom = new FormAttachment(wAuditDTSCol, -margin);
 		fdSurrGroup.right = new FormAttachment(100, 0);
 		gSurrGroup.setBackground(shell.getBackground());
 
@@ -466,7 +461,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		wSeq.setLayoutData(gdSeq);
 		wSeq.addFocusListener(new FocusListener() {
 			public void focusGained(FocusEvent arg0) {
-				inputMeta.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_SEQUENCE);
+				inputMeta.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_SEQUENCE);
 				wSeqButton.setSelection(true);
 				wAutoinc.setSelection(false);
 				wTableMax.setSelection(false);
@@ -493,61 +488,32 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		setSequence();
 		setAutoincUse();
 
-		// Optional FK surrogate key column:
-		wlSurrForeignKey = new Label(shell, SWT.RIGHT);
-		wlSurrForeignKey.setText(BaseMessages.getString(PKG, "LoadHubDialog.SurrForeignKey.Label"));
-		props.setLook(wlSurrForeignKey);
-		FormData fdlSurrForeignKey = new FormData();
-		fdlSurrForeignKey.left = new FormAttachment(0, 0);
-		fdlSurrForeignKey.right = new FormAttachment(middle, -margin);
-		fdlSurrForeignKey.bottom = new FormAttachment(gSurrGroup, -margin);
-		wlSurrForeignKey.setLayoutData(fdlSurrForeignKey);
 		
-		wSurrForeignKey = new CCombo(shell, SWT.BORDER | SWT.READ_ONLY);
-		props.setLook(wSurrForeignKey);
-		wSurrForeignKey.addModifyListener(lsMod);
-		FormData fdSurrForeignKey = new FormData();
-		fdSurrForeignKey.left = new FormAttachment(middle, 0);
-		fdSurrForeignKey.right = new FormAttachment(100, 0);
-		fdSurrForeignKey.bottom = new FormAttachment(gSurrGroup, -margin);
-		wSurrForeignKey.setLayoutData(fdSurrForeignKey);
-		wSurrForeignKey.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent arg0) {}
-			public void focusGained(FocusEvent arg0) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				setColumnsCombo(wSurrForeignKey);
-				shell.setCursor(null);
-				busy.dispose();
-			}
-		});
-
-		
-		// Surrogate key column:
-		wlSurrKey = new Label(shell, SWT.RIGHT);
-		wlSurrKey.setText(BaseMessages.getString(PKG, "LoadHubDialog.SurrKey.Label"));
-		props.setLook(wlSurrKey);
+		// Tech/surr key column:
+		wlTechKey = new Label(shell, SWT.RIGHT);
+		wlTechKey.setText(BaseMessages.getString(PKG, "LoadLinkDialog.SurrKey.Label"));
+		props.setLook(wlTechKey);
 		FormData fdlTk = new FormData();
 		fdlTk.left = new FormAttachment(0, 0);
 		fdlTk.right = new FormAttachment(middle, -margin);
-		fdlTk.bottom = new FormAttachment(wSurrForeignKey, -margin);
-		wlSurrKey.setLayoutData(fdlTk);
+		fdlTk.bottom = new FormAttachment(gSurrGroup, -margin);
+		wlTechKey.setLayoutData(fdlTk);
 
-		wSurrKey = new CCombo(shell, SWT.BORDER | SWT.READ_ONLY);
-		props.setLook(wSurrKey);
+		wTechKey = new CCombo(shell, SWT.BORDER | SWT.READ_ONLY);
+		props.setLook(wTechKey);
 		// set its listener
-		wSurrKey.addModifyListener(lsMod);
+		wTechKey.addModifyListener(lsMod);
 		FormData fdTk = new FormData();
 		fdTk.left = new FormAttachment(middle, 0);
-		fdTk.bottom = new FormAttachment(wSurrForeignKey, -margin);
+		fdTk.bottom = new FormAttachment(gSurrGroup, -margin);
 		fdTk.right = new FormAttachment(100, 0);
-		wSurrKey.setLayoutData(fdTk);
-		wSurrKey.addFocusListener(new FocusListener() {
+		wTechKey.setLayoutData(fdTk);
+		wTechKey.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent arg0) {}
 			public void focusGained(FocusEvent arg0) {
 				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
 				shell.setCursor(busy);
-				setColumnsCombo(wSurrKey);
+				setColumnsCombo(wTechKey, ValueMetaInterface.TYPE_INTEGER,-1);
 				shell.setCursor(null);
 				busy.dispose();
 			}
@@ -558,9 +524,10 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		fdKey.left = new FormAttachment(0, 0);
 		fdKey.top = new FormAttachment(wlKey, margin);
 		fdKey.right = new FormAttachment(100, 0);
-		fdKey.bottom = new FormAttachment(wSurrKey, -margin);
+		fdKey.bottom = new FormAttachment(wTechKey, -margin);
 		wKey.setLayoutData(fdKey);
 
+		
 		//
 		// Search the fields in the background
 		//
@@ -616,8 +583,10 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		wHubTable.addSelectionListener(lsDef);
 		wBatchSize.addSelectionListener(lsDef);
 		wSeq.addSelectionListener(lsDef);
-		wSurrKey.addSelectionListener(lsDef);
-		wNatkeyTable.addSelectionListener(lsDef);
+		wTechKey.addSelectionListener(lsDef);
+		wAuditDTSCol.addSelectionListener(lsDef);
+		wAuditRecSrcCol.addSelectionListener(lsDef);
+		wAuditRecSrcVal.addSelectionListener(lsDef);
 
 		// Detect X or ALT-F4 or something that kills this window...
 		shell.addShellListener(new ShellAdapter() {
@@ -633,15 +602,10 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 
 		wbHubTable.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				getTableName(wHubTable);
+				getTableName();
 			}
 		});
 
-		wbNatkeyTable.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				getTableName(wNatkeyTable);
-			}
-		});
 
 		// Set the shell size, based upon previous time...
 		setSize();
@@ -679,19 +643,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 
 	}
 
-	public void enableFields() {
-		wlNatkeyTable.setEnabled(wbExtNatkeyTable.getSelection());
-		wNatkeyTable.setEnabled(wbExtNatkeyTable.getSelection());
-		wNatkeyTable.setVisible(wbExtNatkeyTable.getSelection());
-		wbNatkeyTable.setEnabled(wbExtNatkeyTable.getSelection());
-		wbNatkeyTable.setVisible(wbExtNatkeyTable.getSelection());
-
-		wlSurrForeignKey.setEnabled(wbExtNatkeyTable.getSelection());
-		wSurrForeignKey.setEnabled(wbExtNatkeyTable.getSelection());
-		wSurrForeignKey.setVisible(wbExtNatkeyTable.getSelection());
-
-	}
-
+	
 	/*
 	 * To reset cacheColumnMap when connection is changed at the UI
 	 */
@@ -742,24 +694,27 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 	}
 
 	
-	private void setColumnsCombo(CCombo combo) {
+	private void setColumnsCombo(CCombo combo, int filterType1, int filterType2) {
 		// clear and reset..
-		if (combo != null){
-			combo.removeAll();
+		combo.removeAll();
+		RowMetaInterface surCols = null;
 
-			RowMetaInterface surCols = null;
-			if (combo == wSurrKey){
-				surCols = getColumnsFromCache(wSchema.getText(),wHubTable.getText() );	
-			} else {
-				surCols = getColumnsFromCache(wSchema.getText(),wNatkeyTable.getText() );
-			}
-			
-			if (surCols != null){
-				for (int i = 0; i < surCols.getFieldNames().length; i++){
-					combo.add(surCols.getFieldNames()[i]);
+		//ValueMetaInterface
+		surCols = getColumnsFromCache(wSchema.getText(),wHubTable.getText() );	
+		
+		if (surCols != null){
+			for (int i = 0; i < surCols.getFieldNames().length; i++){
+				if (filterType1 != -1 ){
+					if (filterType1 == surCols.getValueMeta(i).getType()){
+						combo.add(surCols.getFieldNames()[i]);	
+					} else if (filterType2 != -1 && filterType2 == surCols.getValueMeta(i).getType()){
+						combo.add(surCols.getFieldNames()[i]);
+					}
+				} else {
+					combo.add(surCols.getFieldNames()[i]);	
 				}
-			} 
-		}
+			}
+		} 
 	}
 
 	
@@ -767,11 +722,9 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 	private void setTableFieldCombo() {
 		Runnable fieldLoader = new Runnable() {
 			public void run() {
-				// get the "right" table to fetch from
-				TextVar hubOrNatkey = wbExtNatkeyTable.getSelection() ? wNatkeyTable : wHubTable;
 
-				if (!hubOrNatkey.isDisposed() && !wConnection.isDisposed() && !wSchema.isDisposed()) {
-					String tableName = hubOrNatkey.getText();
+				if (!wHubTable.isDisposed() && !wConnection.isDisposed() && !wSchema.isDisposed()) {
+					String tableName = wHubTable.getText();
 					String schemaName = wSchema.getText();
 
 					// clear
@@ -790,7 +743,6 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 							colInfo.setComboValues(new String[] {});	
 						}
 					}
-					
 				}
 			}
 		};
@@ -841,51 +793,53 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 			wSchema.setText(inputMeta.getSchemaName());
 		}
 
-		if (inputMeta.getHubTable() != null) {
-			wHubTable.setText(inputMeta.getHubTable());
-		}
-
-		wbExtNatkeyTable.setSelection(inputMeta.getNatkeyTable() != null);
-		enableFields();
-
-		if (inputMeta.getNatkeyTable() != null) {
-			wNatkeyTable.setText(inputMeta.getNatkeyTable());
+		if (inputMeta.getTargetTable() != null) {
+			wHubTable.setText(inputMeta.getTargetTable());
 		}
 
 		wBatchSize.setText("" + inputMeta.getBufferSize());
 
-		if (inputMeta.getNatKeyField() != null) {
-			for (int i = 0; i < inputMeta.getNatKeyField().length; i++) {
+		if (inputMeta.getFields() != null) {
+			for (int i = 0; i < inputMeta.getFields().length; i++) {
 				TableItem item = wKey.table.getItem(i);
-				if (inputMeta.getNatKeyCol()[i] != null) {
-					item.setText(1, inputMeta.getNatKeyCol()[i]);
+				if (inputMeta.getCols()[i] != null) {
+					item.setText(1, inputMeta.getCols()[i]);
 				}
-				if (inputMeta.getNatKeyField()[i] != null) {
-					item.setText(2, inputMeta.getNatKeyField()[i]);
+				if (inputMeta.getFields()[i] != null) {
+					item.setText(2, inputMeta.getFields()[i]);
 				}
+				if (inputMeta.getTypes()[i] != null) {
+					item.setText(3, inputMeta.getTypes()[i]);
+				}
+
 			}
 		}
 
-		if (inputMeta.getSurrPKeyColumn() != null) {
-			wSurrKey.setText(inputMeta.getSurrPKeyColumn());
+		if (inputMeta.getTechKeyCol() != null) {
+			wTechKey.setText(inputMeta.getTechKeyCol());
 		}
 
-		if (inputMeta.getSurrFKeyInNatkeyTable() != null) {
-			wSurrForeignKey.setText(inputMeta.getSurrFKeyInNatkeyTable());
+		if (inputMeta.getAuditDtsCol() != null) {
+			wAuditDTSCol.setText(inputMeta.getAuditDtsCol());
 		}
 
-		// wRemoveNatkey.setSelection(input.isRemoveNatkeyFields());
-		wCreationDateCol.setText(Const.NVL(inputMeta.getCreationDateCol(), ""));
+		if (inputMeta.getAuditRecSourceCol() != null){
+			wAuditRecSrcCol.setText(inputMeta.getAuditRecSourceCol());
+		}
 
-		String surrKeyCreation = inputMeta.getSurrKeyCreation();
+		if (inputMeta.getAuditRecSourceValue() != null){
+			wAuditRecSrcVal.setText(inputMeta.getAuditRecSourceValue());
+		}
+		
+		String surrKeyCreation = inputMeta.getKeyGeneration();
 
-		if (LoadAnchorMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
+		if (LoadLinkMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
 			wAutoinc.setSelection(true);
-		} else if ((LoadAnchorMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
+		} else if ((LoadLinkMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
 			wSeqButton.setSelection(true);
 		} else { // TableMax is also the default when no creation is yet defined
 			wTableMax.setSelection(true);
-			inputMeta.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_TABLEMAX);
+			inputMeta.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_TABLEMAX);
 		}
 		if (inputMeta.getSequenceName() != null) {
 			wSeq.setText(inputMeta.getSequenceName());
@@ -913,7 +867,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 			return;
 		}
 
-		LoadAnchorMeta oldMetaState = (LoadAnchorMeta) inputMeta.clone();
+		LoadHubMeta oldMetaState = (LoadHubMeta) inputMeta.clone();
 
 		getInfo(inputMeta);
 		stepname = wStepname.getText(); // return value
@@ -933,45 +887,36 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 	/*
 	 * Update the Meta object according to UI widgets
 	 */
-	private void getInfo(LoadAnchorMeta in) {
+	private void getInfo(LoadHubMeta in) {
 
 		in.setDatabaseMeta(transMeta.findDatabase(wConnection.getText()));
 		in.setSchemaName(wSchema.getText());
-		in.setHubTable(wHubTable.getText());
-		in.setSurrPKeyColumn(wSurrKey.getText());
-
-		if (wbExtNatkeyTable.getSelection()) {
-			in.setNatkeyTable(wNatkeyTable.getText());
-			in.setSurrFKeyInNatkeyTable(wSurrForeignKey.getText());
-		} else {
-			// flag indicating NOT using separate table
-			in.setNatkeyTable(null);
-			in.setSurrFKeyInNatkeyTable(null);
-		}
-		
+		in.setTargetTable(wHubTable.getText());
+		in.setTechKeyCol(wTechKey.getText());
+		in.setAuditDtsCol(wAuditDTSCol.getText());
+		in.setAuditRecSourceCol(wAuditRecSrcCol.getText());
+		in.setAuditRecSourceValue(wAuditRecSrcVal.getText());
 		in.setBufferSize(Const.toInt(wBatchSize.getText(), 0));
 
 		int nrkeys = wKey.nrNonEmpty();
 		in.allocateKeyArray(nrkeys);
 
-		logDebug("Found nb of Keys=", String.valueOf(nrkeys));
 		for (int i = 0; i < nrkeys; i++) {
 			TableItem item = wKey.getNonEmpty(i);
-			in.getNatKeyCol()[i] = item.getText(1);
-			in.getNatKeyField()[i] = item.getText(2);
+			in.getCols()[i] = item.getText(1);
+			in.getFields()[i] = item.getText(2);
+			in.getTypes()[i] = item.getText(3);
 		}
 
 		if (wAutoinc.getSelection()) {
-			in.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_AUTOINC);
+			in.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_AUTOINC);
 		} else if (wSeqButton.getSelection()) {
-			in.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_SEQUENCE);
+			in.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_SEQUENCE);
 			in.setSequenceName(wSeq.getText());
 		} else { // TableMax
-			in.setSurrKeyCreation(LoadAnchorMeta.CREATION_METHOD_TABLEMAX);
+			in.setKeyGeneration(LoadAnchorMeta.CREATION_METHOD_TABLEMAX);
 		}
-
-		// in.setRemoveNatkeyFields(wRemoveNatkey.getSelection());
-		in.setCreationDateCol(wCreationDateCol.getText());
+		
 	}
 
 	private void getSchemaNames() {
@@ -991,8 +936,8 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 					if (d != null) {
 						wSchema.setText(Const.NVL(d, ""));
 						setTableFieldCombo();
-						setColumnsCombo(wSurrKey);
-						setColumnsCombo(wSurrForeignKey);
+						setTableFieldCombo();
+						//setColumnsCombo();
 					}
 				} else {
 					MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
@@ -1009,9 +954,8 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		}
 	}
 
-	private void getTableName(TextVar hubOrNatkey) {
+	private void getTableName() {
 		DatabaseMeta inf = null;
-		// New class: SelectTableDialog
 		int connr = wConnection.getSelectionIndex();
 		if (connr >= 0) {
 			inf = transMeta.getDatabase(connr);
@@ -1021,16 +965,11 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 			logDebug("Looking at connection: ", inf.toString());
 
 			DatabaseExplorerDialog std = new DatabaseExplorerDialog(shell, SWT.NONE, inf, transMeta.getDatabases());
-			std.setSelectedSchemaAndTable(wSchema.getText(), hubOrNatkey.getText());
+			std.setSelectedSchemaAndTable(wSchema.getText(), wHubTable.getText());
 			if (std.open()) {
 				wSchema.setText(Const.NVL(std.getSchemaName(), ""));
-				hubOrNatkey.setText(Const.NVL(std.getTableName(), ""));
+				wHubTable.setText(Const.NVL(std.getTableName(), ""));
 				setTableFieldCombo();
-				if (hubOrNatkey == wHubTable){
-					setColumnsCombo(wSurrKey);	
-				} else {
-					setColumnsCombo(wSurrForeignKey);	
-				}
 			}
 		} else {
 			MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
@@ -1044,10 +983,10 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		try {
 			RowMetaInterface r = transMeta.getPrevStepFields(stepname);
 			if (r != null && !r.isEmpty()) {
-				BaseStepDialog.getFieldsFromPrevious(r, wKey, 1, new int[] { 1, 2 }, new int[] {}, -1, -1,
+				BaseStepDialog.getFieldsFromPrevious(r, wKey, 2, new int[] { 2 }, new int[] {}, -1, -1,
 						new TableItemInsertListener() {
 							public boolean tableItemInserted(TableItem tableItem, ValueMetaInterface v) {
-								tableItem.setText(3, "N");
+								tableItem.setText(3, LoadHubMeta.IDENTIFYING_KEY);
 								return true;
 							}
 						});

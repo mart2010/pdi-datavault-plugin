@@ -1,4 +1,4 @@
-package plugin.mo.trans.steps.loadlink;
+package plugin.mo.trans.steps.loadhub;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,10 +33,11 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
 import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
-import plugin.mo.trans.steps.common.BaseLoadHubLink;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.BaseLoadHubLink;
 import plugin.mo.trans.steps.common.LoadHubLinkData;
+import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
 import plugin.mo.trans.steps.loadlink.ui.LoadLinkDialog;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
@@ -49,12 +50,13 @@ import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
  * @author mouellet
  *
  */
-public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
-	public static String IDENTIFYING_KEY = "Relationship Key";
+public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
+	public static String IDENTIFYING_KEY = "Business Key";
 	public static String OTHER_TYPE = "Other Attribute";
 	
 	
-	public LoadLinkMeta() {
+	
+	public LoadHubMeta() {
 		super();
 	}
 		
@@ -64,11 +66,13 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 		return IDENTIFYING_KEY;
 	}
 
+
 	@Override
 	public String getOtherTypeString() {
 		return OTHER_TYPE;
 	}
 
+	
 	
 	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
@@ -83,7 +87,7 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 	}
 
 	public StepDialogInterface getDialog(Shell shell, StepMetaInterface meta, TransMeta transMeta, String name) {
-		return new LoadLinkDialog(shell, meta, transMeta, name);
+		return new LoadHubDialog(shell, meta, transMeta, name);
 	}
 
 	
@@ -174,61 +178,14 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
 			RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info, VariableSpace space,
 			Repository repository, IMetaStore metaStore) {
-		CheckResult cr;
-		String error_message = "";
-
-		if (databaseMeta != null) {
-			Database db = new Database(loggingObject, databaseMeta);
-			try {
-				db.connect();
-/*
-				if (!Const.isEmpty(linkTable)) {
-					boolean first = true;
-					boolean error_found = false;
-					
-					String schemaLinkTable = databaseMeta.getQuotedSchemaTableCombination(schemaName, linkTable);
-					RowMetaInterface linkRowMeta = db.getTableFields(schemaLinkTable);
-					//to complete ...
-					
-				}
-				
-				//....
-				/* to add to check :
-				if (keyCols == null || keyCols.length < 2) {
-					throw new KettleStepException(BaseMessages.getString(PKG, "LoadLinkMeta.CheckResult.KeyFieldsIssues"));
-				}
-
-				if (keyCreation != null) {
-					if (!(LoadHubMeta.CREATION_METHOD_AUTOINC.equals(keyCreation)
-							|| LoadHubMeta.CREATION_METHOD_SEQUENCE.equals(keyCreation) || LoadHubMeta.CREATION_METHOD_TABLEMAX
-								.equals(keyCreation))) {
-						error_message += BaseMessages.getString(PKG, "LoadHubMeta.CheckResult.ErrorSurrKeyCreation")
-								+ ": " + keyCreation + "!";
-						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-						remarks.add(cr);
-					}
-				}
-				*/
-				
-				
-			}  catch (KettleException e) {
-				error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.ErrorOccurred") + e.getMessage();
-				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-				remarks.add(cr);
-			} finally {
-				db.disconnect();
-			}
-			
-		} else {
-			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.InvalidConnection");
-			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-			remarks.add(cr);
-		}
+		super.check(remarks, transMeta, stepMeta, prev, input, output, info, space, repository, metaStore);
+		//TODO: see if we need to have specialized check here...
+		
 	}	
 	
 	
 	public Object clone() {
-		LoadLinkMeta retval = (LoadLinkMeta) super.clone();
+		LoadHubMeta retval = (LoadHubMeta) super.clone();
 		int nr = fields.length;
 		retval.allocateKeyArray(nr);
 
