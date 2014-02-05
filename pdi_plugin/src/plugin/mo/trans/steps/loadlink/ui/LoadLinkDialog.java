@@ -109,10 +109,8 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private Label wlAuditDTSCol;
 	private CCombo wAuditDTSCol;
-
 	private Label wlAuditRecSrcCol;
 	private CCombo wAuditRecSrcCol;
-	
 	private Label wlAuditRecSrcVal;
 	private TextVar wAuditRecSrcVal;
 

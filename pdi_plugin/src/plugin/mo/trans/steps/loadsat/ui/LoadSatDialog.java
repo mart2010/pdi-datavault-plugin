@@ -24,6 +24,7 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
@@ -91,11 +92,17 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 	private Label wlIsIdempotentSat;
 	private Button wbIsIdempotentSat;
 
-	private Group wAdditionalFields;
 	private Label wlToDateCol;
 	private CCombo wcbToDateCol;
 	private Label wlToDateMax;
 	private Text wToDateMax;
+
+	private Label wlAuditDTSCol;
+	private CCombo wAuditDTSCol;
+	private Label wlAuditRecSrcCol;
+	private CCombo wAuditRecSrcCol;
+	private Label wlAuditRecSrcVal;
+	private TextVar wAuditRecSrcVal;
 
 
 	private Button wGet;
@@ -255,25 +262,6 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		fdTable.right = new FormAttachment(wbSatTable, -margin);
 		wSatTable.setLayoutData(fdTable);
 
-		// Idempotent ?
-		wlIsIdempotentSat = new Label(shell, SWT.RIGHT);
-		wlIsIdempotentSat.setText(BaseMessages.getString(PKG, "LoadSatDialog.IdempotentTransf.Label"));
-		props.setLook(wlIsIdempotentSat);
-		FormData fdlIdempotent = new FormData();
-		fdlIdempotent.left = new FormAttachment(0, 0);
-		fdlIdempotent.right = new FormAttachment(middle, -margin);
-		fdlIdempotent.top = new FormAttachment(wbSatTable, margin);
-		wlIsIdempotentSat.setLayoutData(fdlIdempotent);
-
-		wbIsIdempotentSat = new Button(shell, SWT.CHECK);
-		props.setLook(wbIsIdempotentSat);
-		FormData fdbExtNatkeyTable = new FormData();
-		fdbExtNatkeyTable.left = new FormAttachment(middle, 0);
-		fdbExtNatkeyTable.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
-		fdbExtNatkeyTable.top = new FormAttachment(wbSatTable, margin);
-		wbIsIdempotentSat.setLayoutData(fdbExtNatkeyTable);
-
-		
 		// Batch size ...
 		wlBatchSize = new Label(shell, SWT.RIGHT);
 		wlBatchSize.setText(BaseMessages.getString(PKG, "LoadDialog.Batchsize.Label"));
@@ -281,18 +269,37 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		FormData fdlBatch = new FormData();
 		fdlBatch.left = new FormAttachment(0, 0);
 		fdlBatch.right = new FormAttachment(middle, -margin);
-		fdlBatch.top = new FormAttachment(wbIsIdempotentSat, margin);
+		fdlBatch.top = new FormAttachment(wSatTable, margin);
 		wlBatchSize.setLayoutData(fdlBatch);
 		wBatchSize = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
 		props.setLook(wBatchSize);
 		wBatchSize.addModifyListener(lsMod);
 		FormData fdBatch = new FormData();
-		fdBatch.top = new FormAttachment(wbIsIdempotentSat, margin);
+		fdBatch.top = new FormAttachment(wSatTable, margin);
 		fdBatch.left = new FormAttachment(middle, 0);
 		fdBatch.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
 		wBatchSize.setLayoutData(fdBatch);
 
 		
+		//Idempotent ?
+		wlIsIdempotentSat = new Label(shell, SWT.RIGHT);
+		wlIsIdempotentSat.setText(BaseMessages.getString(PKG, "LoadSatDialog.IdempotentTransf.Label"));
+		props.setLook(wlIsIdempotentSat);
+		FormData fdlIdempotent = new FormData();
+		fdlIdempotent.left = new FormAttachment(0, 0);
+		fdlIdempotent.right = new FormAttachment(middle, -margin);
+		fdlIdempotent.top = new FormAttachment(wBatchSize, margin);
+		wlIsIdempotentSat.setLayoutData(fdlIdempotent);
+
+		wbIsIdempotentSat = new Button(shell, SWT.CHECK);
+		props.setLook(wbIsIdempotentSat);
+		FormData fdbExtNatkeyTable = new FormData();
+		fdbExtNatkeyTable.left = new FormAttachment(middle, 0);
+		fdbExtNatkeyTable.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
+		fdbExtNatkeyTable.top = new FormAttachment(wBatchSize, margin);
+		wbIsIdempotentSat.setLayoutData(fdbExtNatkeyTable);
+
+				
 		//
 		// The fields mapping
 		//
@@ -301,7 +308,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		props.setLook(wlKey);
 		FormData fdlKey = new FormData();
 		fdlKey.left = new FormAttachment(0, 0);
-		fdlKey.top = new FormAttachment(wBatchSize, margin*3);
+		fdlKey.top = new FormAttachment(wbIsIdempotentSat, margin*3);
 		fdlKey.right = new FormAttachment(100, 0);
 		wlKey.setLayoutData(fdlKey);
 
@@ -348,34 +355,140 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
 		
 		setButtonPositions(new Button[] { wOK, wCancel, wGet }, margin, null);
+
+		// The Audit Group 
+		Group wAuditFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
+		wAuditFields.setText( BaseMessages.getString( PKG, "LoadDialog.AuditGroupFields.Label" ) );
+	    
+		FormLayout auditGroupLayout = new FormLayout();
+	    auditGroupLayout.marginWidth = 3;
+	    auditGroupLayout.marginHeight = 3;
+	    wAuditFields.setLayout( auditGroupLayout );
+	    props.setLook( wAuditFields );
+
 		
-		// The optional Group for "ToDate"
-		wAdditionalFields = new Group( shell, SWT.SHADOW_NONE );
-	    props.setLook( wAdditionalFields );
-	    wAdditionalFields.setText( BaseMessages.getString( PKG, "LoadSatDialog.UsingOptToDate.Label" ) );
-	    FormLayout AdditionalFieldsgroupLayout = new FormLayout();
-	    AdditionalFieldsgroupLayout.marginWidth = 100;
-	    AdditionalFieldsgroupLayout.marginHeight = 5;
-	    wAdditionalFields.setLayout( AdditionalFieldsgroupLayout );
+		// Audit RecSrc
+		// Audit DTS :
+		wlAuditDTSCol = new Label(wAuditFields, SWT.RIGHT);
+		wlAuditDTSCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Label"));
+		props.setLook(wlAuditDTSCol);
+		FormData fdlLastUpdateField = new FormData();
+		fdlLastUpdateField.left = new FormAttachment(0, 0);
+		fdlLastUpdateField.right = new FormAttachment(middle, -margin);
+		fdlLastUpdateField.top = new FormAttachment(wAuditFields, margin);
+		wlAuditDTSCol.setLayoutData(fdlLastUpdateField);
+		
+		wAuditDTSCol = new CCombo(wAuditFields, SWT.BORDER );
+		wAuditDTSCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Tooltip"));
+		props.setLook(wAuditDTSCol);
+		wAuditDTSCol.addModifyListener(lsMod);
+		FormData fdLastUpdateField = new FormData();
+		fdLastUpdateField.left = new FormAttachment(middle, 0);
+		fdLastUpdateField.right = new FormAttachment(100, 0);
+		fdLastUpdateField.top = new FormAttachment(wAuditFields, margin);
+		wAuditDTSCol.setLayoutData(fdLastUpdateField);
+		wAuditDTSCol.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				String t = wAuditDTSCol.getText();
+				setColumnsCombo(wAuditDTSCol, ValueMetaInterface.TYPE_DATE, ValueMetaInterface.TYPE_TIMESTAMP);
+				shell.setCursor(null);
+				wAuditDTSCol.setText(t);
+				busy.dispose();
+			}
+		});
+		
+		//RecSrc Col
+		wlAuditRecSrcCol = new Label(wAuditFields, SWT.RIGHT);
+		wlAuditRecSrcCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcCol.Label"));
+		props.setLook(wlAuditRecSrcCol);
+		FormData fdlRecSrcField = new FormData();
+		fdlRecSrcField.left = new FormAttachment(0, 0);
+		fdlRecSrcField.right = new FormAttachment(middle, -margin);
+		fdlRecSrcField.top = new FormAttachment(wAuditDTSCol, margin);
+		wlAuditRecSrcCol.setLayoutData(fdlRecSrcField);
+		
+		wAuditRecSrcCol = new CCombo(wAuditFields, SWT.BORDER );
+		wAuditRecSrcCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditRecField.Tooltip"));
+		props.setLook(wAuditRecSrcCol);
+		wAuditRecSrcCol.addModifyListener(lsMod);
+		FormData fdRecSrcField = new FormData();
+		fdRecSrcField.left = new FormAttachment(middle, 0);
+		fdRecSrcField.right = new FormAttachment(100, 0);
+		fdRecSrcField.top = new FormAttachment(wAuditDTSCol, margin);
+		wAuditRecSrcCol.setLayoutData(fdRecSrcField);
+		wAuditRecSrcCol.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				String t = wAuditRecSrcCol.getText();
+				setColumnsCombo(wAuditRecSrcCol, ValueMetaInterface.TYPE_STRING, -1);
+				shell.setCursor(null);
+				wAuditRecSrcCol.setText(t);
+				busy.dispose();
+			}
+		});
+
+	    
+	    // RecSrc Value ...
+		wlAuditRecSrcVal = new Label(wAuditFields, SWT.RIGHT);
+		wlAuditRecSrcVal.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcVal.Label"));
+		props.setLook(wlAuditRecSrcVal);
+		FormData fdlRcVal = new FormData();
+		fdlRcVal.left = new FormAttachment(0, 0);
+		fdlRcVal.right = new FormAttachment(middle, -margin);
+		fdlRcVal.top = new FormAttachment(wAuditRecSrcCol, margin);
+		wlAuditRecSrcVal.setLayoutData(fdlRcVal);
+		
+		wAuditRecSrcVal = new TextVar(transMeta, wAuditFields, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		props.setLook(wAuditRecSrcVal);
+		wAuditRecSrcVal.addModifyListener(lsMod);
+		FormData fdRcVal = new FormData();
+		fdRcVal.top = new FormAttachment(wAuditRecSrcCol, margin);
+		fdRcVal.left = new FormAttachment(middle, 0);
+		fdRcVal.right = new FormAttachment(100, 0);
+		wAuditRecSrcVal.setLayoutData(fdRcVal);
+
+		//Fixing the Audit group 
+	    FormData fdAuditGroup = new FormData();
+	    fdAuditGroup.left = new FormAttachment( 0, 0 );
+	    fdAuditGroup.right = new FormAttachment( 100, 0 );
+	    fdAuditGroup.bottom = new FormAttachment( wOK, -2*margin );
+	    wAuditFields.setLayoutData( fdAuditGroup );
+	    wAuditFields.setTabList(new Control[] { wAuditRecSrcVal, wAuditRecSrcCol, wAuditDTSCol} );
+
+	    
+		// The optional Group for closing "ToDate"
+		Group wClosingDateFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
+		wClosingDateFields.setText( BaseMessages.getString( PKG, "LoadSatDialog.UsingOptToDate.Label" ) );
+	    
+		FormLayout closingDateGroupLayout = new FormLayout();
+	    closingDateGroupLayout.marginWidth = 3;
+	    closingDateGroupLayout.marginHeight = 3;
+	    wClosingDateFields.setLayout( closingDateGroupLayout );
+	    props.setLook( wClosingDateFields );
 		
  
 		// ToDate Expire Column name...
-		wlToDateCol = new Label(wAdditionalFields, SWT.RIGHT);
+		wlToDateCol = new Label(wClosingDateFields, SWT.RIGHT);
 		wlToDateCol.setText(BaseMessages.getString(PKG, "LoadSatDialog.ToDateExpCol.Label"));
 		props.setLook(wlToDateCol);
 		FormData fdlNatTable = new FormData();
 		fdlNatTable.left = new FormAttachment(0, 0);
 		fdlNatTable.right = new FormAttachment(middle, -margin);
-		fdlNatTable.top = new FormAttachment(wAdditionalFields, margin);
+		fdlNatTable.top = new FormAttachment(wClosingDateFields, margin);
 		wlToDateCol.setLayoutData(fdlNatTable);
 
-		wcbToDateCol = new CCombo(wAdditionalFields, SWT.BORDER | SWT.READ_ONLY);
+		wcbToDateCol = new CCombo(wClosingDateFields, SWT.BORDER | SWT.READ_ONLY);
 		props.setLook(wcbToDateCol);
 		wcbToDateCol.addModifyListener(lsMod);
 		FormData fdToDate = new FormData();
 		fdToDate.left = new FormAttachment(middle, 0);
 		fdToDate.right = new FormAttachment(middle + (100 - middle) / 2, -margin);
-		fdToDate.top = new FormAttachment(wAdditionalFields, margin);
+		fdToDate.top = new FormAttachment(wClosingDateFields, margin);
 		wcbToDateCol.setLayoutData(fdToDate);
 		wcbToDateCol.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent arg0) { }
@@ -391,7 +504,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 
 
 		// Expire toDate MAX flag value 
-		wlToDateMax = new Label(wAdditionalFields, SWT.RIGHT);
+		wlToDateMax = new Label(wClosingDateFields, SWT.RIGHT);
 	    String flagText = BaseMessages.getString(PKG, "LoadSatDialog.ExpRecFlag.Label") + " (" + LoadSatMeta.DATE_FORMAT + ")";
 		wlToDateMax.setText(flagText);
 		props.setLook(wlToDateMax);
@@ -401,7 +514,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		fdlToDateMax.top = new FormAttachment(wcbToDateCol, margin);
 		wlToDateMax.setLayoutData(fdlToDateMax);
 		
-		wToDateMax = new Text(wAdditionalFields, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		wToDateMax = new Text(wClosingDateFields, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
 		props.setLook(wToDateMax);
 		wToDateMax.addModifyListener(lsMod);
 		FormData fdToDateMax = new FormData();
@@ -410,23 +523,25 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		fdToDateMax.top = new FormAttachment(wcbToDateCol, margin);
 		wToDateMax.setLayoutData(fdToDateMax);
 
-		
-		// to fix the Grid
+		//Fixing the "ClosingDate" group 
+	    FormData fdOptGroup = new FormData();
+	    fdOptGroup.left = new FormAttachment( 0, 0 );
+	    fdOptGroup.right = new FormAttachment( 100, 0 );
+	    fdOptGroup.bottom = new FormAttachment( wAuditFields, -2*margin );
+	    wClosingDateFields.setLayoutData( fdOptGroup );
+	    wClosingDateFields.setTabList(new Control[] { wcbToDateCol, wToDateMax } );
+
+	    
+		// to fix the Mapping Grid
 		FormData fdKey = new FormData();
 		fdKey.left = new FormAttachment(0, 0);
 		fdKey.top = new FormAttachment(wlKey, margin);
 		fdKey.right = new FormAttachment(100, 0);
-		fdKey.bottom = new FormAttachment(wAdditionalFields, -margin);
+		fdKey.bottom = new FormAttachment(wClosingDateFields, -2*margin);
 		wKey.setLayoutData(fdKey);
 
-		
-	    FormData fdOptGroup = new FormData();
-	    fdOptGroup.left = new FormAttachment( 0, 0 );
-	    fdOptGroup.right = new FormAttachment( 100, 0 );
-	    fdOptGroup.bottom = new FormAttachment( wOK, -2*margin );
-	    wAdditionalFields.setLayoutData( fdOptGroup );
-
-		
+	    
+	    
 		//
 		// Search the fields in the background
 		//
@@ -543,6 +658,8 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 	}
 
 	
+	
+	
 	public void enableFields() {
 		wlIsIdempotentSat.setEnabled(hasOneTemporalField);
 		wbIsIdempotentSat.setEnabled(hasOneTemporalField);
@@ -602,6 +719,31 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		return null;
 	}
 
+	
+	private void setColumnsCombo(CCombo combo, int filterType1, int filterType2) {
+		// clear and reset..
+		combo.removeAll();
+		RowMetaInterface surCols = null;
+
+		//ValueMetaInterface
+		surCols = getColumnsFromCache(wSchema.getText(),wSatTable.getText() );	
+		
+		if (surCols != null){
+			for (int i = 0; i < surCols.getFieldNames().length; i++){
+				if (filterType1 != -1 ){
+					if (filterType1 == surCols.getValueMeta(i).getType()){
+						combo.add(surCols.getFieldNames()[i]);	
+					} else if (filterType2 != -1 && filterType2 == surCols.getValueMeta(i).getType()){
+						combo.add(surCols.getFieldNames()[i]);
+					}
+				} else {
+					combo.add(surCols.getFieldNames()[i]);	
+				}
+			}
+		} 
+	}
+
+	
 	private void setToDateColumns() {
 		// clear and reset..
 		wcbToDateCol.removeAll();

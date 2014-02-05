@@ -48,9 +48,9 @@ import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 	private static Class<?> PKG = CompositeValues.class;
 		
-	public static String ATTRIBUTE_NORMAL = "Normal";
-	public static String ATTRIBUTE_TEMPORAL = "FromDate Temporal";
-	public static String ATTRIBUTE_SURR_FK = "Surrogate ForeignKey";
+	public static String ATTRIBUTE_NORMAL = "Normal Attribute";
+	public static String ATTRIBUTE_TEMPORAL = "From-Date Temporal";
+	public static String ATTRIBUTE_SURR_FK = "Foreign-Key to Hub";
 		
 	public static String NA = "n.a.";
 	public static String DEFAULT_MAX_DATE = "01-01-4000";
@@ -86,7 +86,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 	// Max Date to flag active record (null when "ToDate" not used)
 	private String toDateMaxFlag;
 
-	private boolean isIdempotent = false;
+	private boolean isIdempotent;
 	
 	
 	public LoadSatMeta() {
@@ -119,6 +119,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 		attType[1] = LoadSatMeta.ATTRIBUTE_NORMAL;
 		toDateMaxFlag = LoadSatMeta.DEFAULT_MAX_DATE;
 		toDateColumn = LoadSatMeta.NA;
+		isIdempotent = true;
 	}
 
 	
@@ -336,12 +337,12 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 
 						if (fkfound == 0){
 							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.NoFKFieldsFound") + Const.CR;
+									"LoadSatMeta.CheckResult.NoFKFieldsFound",LoadSatMeta.ATTRIBUTE_SURR_FK) + Const.CR;
 							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 							remarks.add(cr);
 						} else if (fkfound > 1) {
 							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.ManyFKFieldsFound") + Const.CR;
+									"LoadSatMeta.CheckResult.ManyFKFieldsFound",LoadSatMeta.ATTRIBUTE_SURR_FK) + Const.CR;
 							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 							remarks.add(cr);
 						}
@@ -349,7 +350,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 						if (temporalfound > 0) {
 							if (temporalfound > 1) {
 								error_message += BaseMessages.getString(PKG,
-										"LoadSatMeta.CheckResult.ManyTempoFieldsFound") + Const.CR;
+										"LoadSatMeta.CheckResult.ManyTempoFieldsFound",LoadSatMeta.ATTRIBUTE_TEMPORAL) + Const.CR;
 								cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 								remarks.add(cr);
 							}
@@ -543,7 +544,8 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 	}
 
 	public boolean isToDateColumnUsed() {
-		return !(Const.isEmpty(toDateColumn)) && !(toDateColumn.equals(LoadSatMeta.NA));
+		return ( !Const.isEmpty(fromDateColumn) && !Const.isEmpty(toDateColumn) 
+						&& !toDateColumn.equals(LoadSatMeta.NA) );
 	}
 
 	

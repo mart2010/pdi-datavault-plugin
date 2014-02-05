@@ -74,7 +74,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 		schemaName = "";
 		targetTable = "";
 		databaseMeta = null;
-		bufferSize = MIN_BUFFER_SIZE*4;
+		bufferSize = MIN_BUFFER_SIZE*10;
 		//rest to be implemented by subclass 	
 	}
 

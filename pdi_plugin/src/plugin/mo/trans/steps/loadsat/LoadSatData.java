@@ -111,12 +111,8 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 
 	
 	
-	
 	public int populateLookupMap(LoadLinkMeta meta){
-		
-		
-		
-		
+
 		
 		
 		
@@ -273,7 +269,6 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			upToDateRowMeta.addValueMeta(satRowMeta.getValueMeta(posFromDate));
 			upToDateRowMeta.addValueMeta(satRowMeta.getValueMeta(posFk));
 			upToDateRowMeta.addValueMeta(satRowMeta.getValueMeta(posFromDate));
-
 			
 			/* 
 			 * UPDATE <sat_table> SET <toDate-col> = ?
@@ -318,22 +313,17 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	}
 	
 	
-	/*
-	 * TODO: create a Buffer Class to share among all Load*Data 
-	 * and add method like this one for code reuse ... 
-	 */
 	public boolean addToBufferRows(Object[] r, int bufferSize) {
 		if (bufferRows.size() < bufferSize) {
 			bufferRows.add(r);
 			
 			//update the minimum date 
-			// use java.util.Date for now, NOT SURE IF OK !!??
+			//TODO: use java.util.Date for now, NOT SURE IF OK in all cases?
 			if (posFromDate != -1){
 				java.util.Date d = (java.util.Date) r[satAttsRowIdx[posFromDate]];
 				if (minDateBuffer > d.getTime()){
 					minDateBuffer = d.getTime();	
 				}
-				 
 			}
 			return (bufferRows.size() < bufferSize);
 		} else {
@@ -344,7 +334,6 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	
 	public void clearPrepStmts() {
 		try {
-			
 			if (this.prepStmtLookup != null) 
 				this.prepStmtLookup.clearParameters();
 
