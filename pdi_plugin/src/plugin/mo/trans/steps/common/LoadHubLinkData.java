@@ -99,7 +99,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 
 	/*
-	 * Must be called prior to Prepared Stmt init and any row processing 
+	 * Must be called prior to Prepared Stmt initialization and row processing 
 	 */
 	public void initializeRowProcessing(BaseLoadMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {		
 		if (bufferRows == null) {
@@ -148,7 +148,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	 * @return number of row with successful lookup
 	 * @throws KettleDatabaseException 
 	 */
-	public int populateMap(BaseLoadMeta meta, List<Object[]> rows, int nbParamsClause) throws KettleDatabaseException {
+	public int populateMap(List<Object[]> rows, int nbParamsClause) throws KettleDatabaseException {
 		//clean-up previous map
 		lookupMapping.clear();
 		

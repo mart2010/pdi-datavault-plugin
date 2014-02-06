@@ -32,7 +32,6 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	//TODO: remove the ones in subclass
 	protected static Class<?> PKG = CompositeValues.class;
 
-	
 	public static int MAX_SUGG_BUFFER_SIZE = 5000;	
 	public static int MIN_BUFFER_SIZE = 50;
 	

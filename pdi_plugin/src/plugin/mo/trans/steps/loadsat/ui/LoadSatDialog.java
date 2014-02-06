@@ -313,7 +313,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		wlKey.setLayoutData(fdlKey);
 
 		int nrKeyCols = 3;
-		int nrRows = (inputMeta.getAttField() != null ? inputMeta.getAttField().length : 1);
+		int nrRows = (inputMeta.getFields() != null ? inputMeta.getFields().length : 1);
 
 		ciKey = new ColumnInfo[nrKeyCols];
 		ciKey[0] = new ColumnInfo(BaseMessages.getString(PKG, "LoadSatDialog.ColumnInfo.TableColumn"),
@@ -322,7 +322,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
 		ciKey[2] = new ColumnInfo(BaseMessages.getString(PKG, "LoadSatDialog.ColumnInfo.Type"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { LoadSatMeta.ATTRIBUTE_NORMAL, 
-							LoadSatMeta.ATTRIBUTE_SURR_FK , LoadSatMeta.ATTRIBUTE_TEMPORAL });
+							LoadSatMeta.ATTRIBUTE_FK , LoadSatMeta.ATTRIBUTE_TEMPORAL });
 		
 		// attach the tableFieldColumns List to the widget
 		tableFieldColumns.add(ciKey[0]);
@@ -810,27 +810,40 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 			wSchema.setText(inputMeta.getSchemaName());
 		}
 
-		if (inputMeta.getSatTable() != null) {
-			wSatTable.setText(inputMeta.getSatTable());
+		if (inputMeta.getTargetTable() != null) {
+			wSatTable.setText(inputMeta.getTargetTable());
 		}
 
+		
+		if (inputMeta.getAuditDtsCol() != null) {
+			wAuditDTSCol.setText(inputMeta.getAuditDtsCol());
+		}
+
+		if (inputMeta.getAuditRecSourceCol() != null){
+			wAuditRecSrcCol.setText(inputMeta.getAuditRecSourceCol());
+		}
+
+		if (inputMeta.getAuditRecSourceValue() != null){
+			wAuditRecSrcVal.setText(inputMeta.getAuditRecSourceValue());
+		}
+
+		
 		hasOneTemporalField = inputMeta.getFromDateColumn() != null ; 
 		enableFields();
 
-
 		wBatchSize.setText("" + inputMeta.getBufferSize());
 
-		if (inputMeta.getAttField() != null) {
-			for (int i = 0; i < inputMeta.getAttField().length; i++) {
+		if (inputMeta.getFields() != null) {
+			for (int i = 0; i < inputMeta.getFields().length; i++) {
 				TableItem item = wKey.table.getItem(i);
-				if (inputMeta.getAttCol()[i] != null) {
-					item.setText(1, inputMeta.getAttCol()[i]);
+				if (inputMeta.getCols()[i] != null) {
+					item.setText(1, inputMeta.getCols()[i]);
 				}
-				if (inputMeta.getAttField()[i] != null) {
-					item.setText(2, inputMeta.getAttField()[i]);
+				if (inputMeta.getFields()[i] != null) {
+					item.setText(2, inputMeta.getFields()[i]);
 				}
-				if (inputMeta.getAttType()[i] != null) {
-					item.setText(3, inputMeta.getAttType()[i]);
+				if (inputMeta.getTypes()[i] != null) {
+					item.setText(3, inputMeta.getTypes()[i]);
 				}
 				
 			}
@@ -886,11 +899,14 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 
 		inMeta.setDatabaseMeta(transMeta.findDatabase(wConnection.getText()));
 		inMeta.setSchemaName(wSchema.getText());
-		inMeta.setSatTable(wSatTable.getText());
+		inMeta.setTargetTable(wSatTable.getText());
 		inMeta.setBufferSize(Const.toInt(wBatchSize.getText(), 0));
-
+		inMeta.setAuditDtsCol(wAuditDTSCol.getText());
+		inMeta.setAuditRecSourceCol(wAuditRecSrcCol.getText());
+		inMeta.setAuditRecSourceValue(wAuditRecSrcVal.getText());
+		
 		int nrkeys = wKey.nrNonEmpty();
-		inMeta.allocateArray(nrkeys);
+		inMeta.allocateKeyArray(nrkeys);
 
 		logDebug("Found nb of Keys=", String.valueOf(nrkeys));
 		
@@ -899,16 +915,16 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		
 		for (int i = 0; i < nrkeys; i++) {
 			TableItem item = wKey.getNonEmpty(i);
-			inMeta.getAttCol()[i] = item.getText(1);
-			inMeta.getAttField()[i] = item.getText(2);
+			inMeta.getCols()[i] = item.getText(1);
+			inMeta.getFields()[i] = item.getText(2);
 			String t = item.getText(3);
 			//Unknown category is default to Normal 
 			if (!(t.equals(LoadSatMeta.ATTRIBUTE_NORMAL)) &&
-					!(t.equals(LoadSatMeta.ATTRIBUTE_SURR_FK)) &&
+					!(t.equals(LoadSatMeta.ATTRIBUTE_FK)) &&
 					!(t.equals(LoadSatMeta.ATTRIBUTE_TEMPORAL))){
 				t = LoadSatMeta.ATTRIBUTE_NORMAL;
 			}
-			inMeta.getAttType()[i] = t;
+			inMeta.getTypes()[i] = t;
 			
 			//first temporal found is the one we keep
 			if (item.getText(3).equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)){

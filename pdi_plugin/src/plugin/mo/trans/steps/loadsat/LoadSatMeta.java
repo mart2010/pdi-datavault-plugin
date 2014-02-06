@@ -36,8 +36,11 @@ import org.w3c.dom.Node;
 import plugin.mo.trans.steps.backup.loadanchor.LoadAnchor;
 import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorData;
 import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
+import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
+import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 
 /*
@@ -45,33 +48,17 @@ import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
  * TODO: 
  *
  */
-public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
+public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	private static Class<?> PKG = CompositeValues.class;
 		
 	public static String ATTRIBUTE_NORMAL = "Normal Attribute";
 	public static String ATTRIBUTE_TEMPORAL = "From-Date Temporal";
-	public static String ATTRIBUTE_SURR_FK = "Foreign-Key to Hub";
+	public static String ATTRIBUTE_FK = "Foreign-Key to Hub";
 		
 	public static String NA = "n.a.";
 	public static String DEFAULT_MAX_DATE = "01-01-4000";
 	public static String DATE_FORMAT = "dd-MM-yyyy";
 	
-	private DatabaseMeta databaseMeta;
-
-	private String schemaName; 
-	private String satTable;
-
-	// buffer & fetch size
-	private int bufferSize;
-
-	// fields used for attributes
-	private String[] attField;
-
-	// table columns matching fields
-	private String[] attCol;
-	
-	// attribute type (normal,temporal,surrFk)
-	private String[] attType;
 		
 	// column holding "FromDate" (mandatory, if temporal)
 	// flag to null for immutable sat
@@ -93,114 +80,35 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 		super();
 	}
 	
-	
+	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr, TransMeta transMeta,
 			Trans trans) {
 		return new LoadSat(stepMeta, stepDataInterface, cnr, transMeta, trans);
 	}
-
+	@Override
 	public StepDataInterface getStepData() {
 		return new LoadSatData();
 	}
-	
+
+	public StepDialogInterface getDialog(Shell shell, StepMetaInterface meta, TransMeta transMeta, String name) {
+		return new LoadSatDialog(shell, meta, transMeta, name);
+	}
+
 
 	public void setDefault() {
-		schemaName = "";
-		satTable = "";
-		databaseMeta = null;
-		bufferSize = LoadAnchorMeta.MIN_BUFFER_SIZE;
+		super.setDefault();
 		
-		allocateArray(2);
-		attField[0] = "fkey field";
-		attCol[0] = "fkey col";
-		attType[0] = LoadSatMeta.ATTRIBUTE_SURR_FK;
-		attField[1] = "att field";
-		attCol[1] = "att col";
-		attType[1] = LoadSatMeta.ATTRIBUTE_NORMAL;
-		toDateMaxFlag = LoadSatMeta.DEFAULT_MAX_DATE;
-		toDateColumn = LoadSatMeta.NA;
+		int nrkeys = 2;
+		allocateKeyArray(nrkeys);
+		for (int i = 1; i < nrkeys; i++) {
+			fields[i-1] = "field-" + i;
+			cols[i-1] = "foreignKey-" + i;
+			types[i-1] = ATTRIBUTE_FK;
+		}
+
+		toDateMaxFlag = DEFAULT_MAX_DATE;
+		toDateColumn = NA;
 		isIdempotent = true;
-	}
-
-	
-
-	// return the XML holding all meta-setting
-	public String getXML() throws KettleException {
-		StringBuffer retval = new StringBuffer(512);
-		retval.append("  ").append(
-				XMLHandler.addTagValue("connection", databaseMeta == null ? "" : databaseMeta.getName()));
-		retval.append("  ").append(XMLHandler.addTagValue("schemaName", schemaName));
-		retval.append("  ").append(XMLHandler.addTagValue("satTable", satTable));
-		retval.append("  ").append(XMLHandler.addTagValue("batchSize", bufferSize));
-
-		retval.append("  <fields>").append(Const.CR);
-		for (int i = 0; i < attField.length; i++) {
-			retval.append("   <key>").append(Const.CR);
-			retval.append("   ").append(XMLHandler.addTagValue("field_key", attField[i]));
-			retval.append("   ").append(XMLHandler.addTagValue("col_lookup", attCol[i]));
-			retval.append("   ").append(XMLHandler.addTagValue("col_type", attType[i]));
-			retval.append("   </key>").append(Const.CR);
-		}
-		retval.append("  </fields>").append(Const.CR);
-
-		retval.append("  ").append(XMLHandler.addTagValue("idempotent", isIdempotent));
-		retval.append("  ").append(XMLHandler.addTagValue("toDateColumn", toDateColumn));
-		retval.append("  ").append(XMLHandler.addTagValue("toDateMaxFlag", toDateMaxFlag));
-
-		return retval.toString();
-	}
-
-	private void readData(Node stepnode, List<? extends SharedObjectInterface> databases) throws KettleXMLException {
-		try {
-			String con = XMLHandler.getTagValue(stepnode, "connection");
-			databaseMeta = DatabaseMeta.findDatabase(databases, con);
-			schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
-			satTable = XMLHandler.getTagValue(stepnode, "satTable");
-
-			String bSize;
-			bSize = XMLHandler.getTagValue(stepnode, "batchSize");
-			bufferSize = Const.toInt(bSize, 0);
-			
-			Node keys = XMLHandler.getSubNode(stepnode, "fields");
-			int nrkeys = XMLHandler.countNodes(keys, "key");
-			allocateArray(nrkeys);
-			// Read key mapping
-			for (int i = 0; i < nrkeys; i++) {
-				Node knode = XMLHandler.getSubNodeByNr(keys, "key", i);
-				attField[i] = XMLHandler.getTagValue(knode, "field_key");
-				attCol[i] = XMLHandler.getTagValue(knode, "col_lookup");
-				attType[i] = XMLHandler.getTagValue(knode, "col_type");	
-			}
-			updateFkAndFromDate();
-			isIdempotent = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "idempotent"));
-			toDateColumn = XMLHandler.getTagValue(stepnode, "toDateColumn");
-			toDateMaxFlag = XMLHandler.getTagValue(stepnode, "toDateMaxFlag");
-		} catch (Exception e) {
-			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadMeta.Exception.LoadCommomStepInfo"), e);
-		}
-	}
-
-	
-	private void updateFkAndFromDate(){
-		for(int i = 0; i < attType.length ; i++){
-			if (attType[i] != null && attType[i].equals(LoadSatMeta.ATTRIBUTE_SURR_FK)){
-				fkColumn = attCol[i]; 
-			}
-			if (attType[i] != null &&  attType[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)){
-				fromDateColumn = attCol[i]; 
-			}
-		}
-	}
-	
-	
-	public void loadXML(Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore) throws KettleXMLException {
-		readData(stepnode, databases);
-	}
-
-	public void allocateArray(int nrFields) {
-		attField = new String[nrFields];
-		attCol = new String[nrFields];
-		attType = new String[nrFields];
 	}
 
 	/**
@@ -208,77 +116,90 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 	 */
 	public void getFields(RowMetaInterface row, String origin, RowMetaInterface[] info, StepMeta nextStep,
 			VariableSpace space, Repository repository, IMetaStore metaStore) throws KettleStepException {
+	}
+
+	// return the XML holding all meta-setting
+	public String getXML() throws KettleException {
+		String base = super.getXML();
 		
+		StringBuffer retval = new StringBuffer(100);
+		retval.append("  ").append(XMLHandler.addTagValue("idempotent", isIdempotent));
+		retval.append("  ").append(XMLHandler.addTagValue("toDateColumn", toDateColumn));
+		retval.append("  ").append(XMLHandler.addTagValue("toDateMaxFlag", toDateMaxFlag));
+		return base + retval.toString();
+	}
+	
+	public void loadXML(Node stepnode, List<DatabaseMeta> databases, IMetaStore metaStore) throws KettleXMLException {
+		this.readData(stepnode, databases);
+	}
+
+	protected void readData(Node stepnode, List<? extends SharedObjectInterface> databases) throws KettleXMLException {
+		try {
+			super.readData(stepnode, databases);
+			isIdempotent = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "idempotent"));
+			toDateColumn = XMLHandler.getTagValue(stepnode, "toDateColumn");
+			toDateMaxFlag = XMLHandler.getTagValue(stepnode, "toDateMaxFlag");
+			updateFkAndFromDate();
+		} catch (Exception e) {
+			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadSatMeta.Exception.LoadStepInfo"), e);
+		}
 	}
 
 	
-	public Object clone() {
-		LoadSatMeta retval = (LoadSatMeta) super.clone();
-
-		int nrkeys = attField.length;
-		retval.allocateArray(nrkeys);
-
-		// Deep copy for Array
-		for (int i = 0; i < nrkeys; i++) {
-			retval.attField[i] = attField[i];
-			retval.attCol[i] = attCol[i];
-		}
-		return retval;
-	}
-
 	public void readRep(Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases)
 			throws KettleException {
 		try {
-			databaseMeta = rep.loadDatabaseMetaFromStepAttribute(id_step, "id_connection", databases);
-
-			schemaName = rep.getStepAttributeString(id_step, "schemaName");
-			satTable = rep.getStepAttributeString(id_step, "hubTable");
-			bufferSize = (int) rep.getStepAttributeInteger(id_step, "batchSize");
-			
-			int nrkeys = rep.countNrStepAttributes(id_step, "field_key");
-			allocateArray(nrkeys);
-			for (int i = 0; i < nrkeys; i++) {
-				attField[i] = rep.getStepAttributeString(id_step, i, "field_key");
-				attCol[i]  = rep.getStepAttributeString(id_step, i, "col_lookup");
-				attType[i] = rep.getStepAttributeString(id_step, i, "col_type");
-			}
-
-			updateFkAndFromDate();
+			super.readRep(rep, metaStore, id_step, databases);
 			isIdempotent = rep.getStepAttributeBoolean(id_step, "idempotent");
 			toDateColumn = rep.getStepAttributeString(id_step, "toDateColumn");
 			toDateMaxFlag = rep.getStepAttributeString(id_step, "toDateMaxFlag");
+			updateFkAndFromDate();
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG,
-					"LoadMeta.Exception.ErrorReadingCommonStepInfo"), e);
+					"LoadSatMeta.Exception.ErrorReadingLinkStepInfo"), e);
 		}
 	}
 
 	public void saveRep(Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step)
 			throws KettleException {
 		try {
-			rep.saveDatabaseMetaStepAttribute(id_transformation, id_step, "id_connection", databaseMeta);
-			// this to save the step-database Id
-			if (databaseMeta != null) {
-				rep.insertStepDatabase(id_transformation, id_step, databaseMeta.getObjectId());
-			}
-
-			rep.saveStepAttribute(id_transformation, id_step, "schemaName", schemaName);
-			rep.saveStepAttribute(id_transformation, id_step, "hubTable", satTable);
-			rep.saveStepAttribute(id_transformation, id_step, "batchSize", bufferSize);
-			
-			for (int i = 0; i < attField.length; i++) {
-				rep.saveStepAttribute(id_transformation, id_step, i, "field_key", attField[i]);
-				rep.saveStepAttribute(id_transformation, id_step, i, "col_lookup", attCol[i]);
-			}
-			
+			super.saveRep(rep, metaStore, id_transformation, id_step);
 			rep.saveStepAttribute(id_transformation, id_step, "idempotent", isIdempotent);
 			rep.saveStepAttribute(id_transformation, id_step, "toDateColumn", toDateColumn);
 			rep.saveStepAttribute(id_transformation, id_step, "toDateMaxFlag", toDateMaxFlag);
 		} catch (Exception e) {
-			throw new KettleException(BaseMessages.getString(PKG, "LoadMeta.Exception.UnableToSaveCommonStepInfo")
+			throw new KettleException(BaseMessages.getString(PKG, "LoadSatMeta.Exception.UnableToSaveLinkStepInfo")
 					+ id_step, e);
 		}
 	}
+	
+	private void updateFkAndFromDate(){
+		for(int i = types.length -1; i >= 0 ; i--){
+			if (types[i] != null && types[i].equals(ATTRIBUTE_FK)){
+				fkColumn = cols[i]; 
+			}
+			if (types[i] != null &&  types[i].equals(ATTRIBUTE_TEMPORAL)){
+				fromDateColumn = cols[i]; 
+			}
+		}
+	}
+	
+	
+	
+	public Object clone() {
+		LoadSatMeta retval = (LoadSatMeta) super.clone();
+		int nr = fields.length;
+		retval.allocateKeyArray(nr);
+
+		// Deep copy for Array
+		for (int i = 0; i < nr; i++) {
+			retval.fields[i] = fields[i];
+			retval.cols[i] = cols[i];
+			retval.types[i] = types[i];
+		}		
+		return retval;
+	}
+
 
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
 			RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info, VariableSpace space,
@@ -291,11 +212,11 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 			try {
 				db.connect();
 
-				if (!Const.isEmpty(satTable)) {
+				if (!Const.isEmpty(targetTable)) {
 					boolean first = true;
 					boolean error_found = false;
 					
-					String schemaSatTable = databaseMeta.getQuotedSchemaTableCombination(schemaName, satTable);
+					String schemaSatTable = databaseMeta.getQuotedSchemaTableCombination(schemaName, targetTable);
 					RowMetaInterface satRowMeta = db.getTableFields(schemaSatTable);
 					
 					int fkfound = 0;
@@ -304,13 +225,13 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 					int unknownfound = 0;
 					
 					if (satRowMeta != null) {
-						for (int i = 0; i < attCol.length; i++) {
-							String lufield = attCol[i];
-							if (attType[i].equals(LoadSatMeta.ATTRIBUTE_SURR_FK)) {
+						for (int i = 0; i < cols.length; i++) {
+							String lufield = cols[i];
+							if (types[i].equals(LoadSatMeta.ATTRIBUTE_FK)) {
 								fkfound++;
-							} else if (attType[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)){
+							} else if (types[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)){
 								temporalfound++;
-							} else if (attType[i].equals(LoadSatMeta.ATTRIBUTE_NORMAL)){
+							} else if (types[i].equals(LoadSatMeta.ATTRIBUTE_NORMAL)){
 								normalfound++;
 							} else {
 								unknownfound++;
@@ -337,12 +258,12 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 
 						if (fkfound == 0){
 							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.NoFKFieldsFound",LoadSatMeta.ATTRIBUTE_SURR_FK) + Const.CR;
+									"LoadSatMeta.CheckResult.NoFKFieldsFound",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
 							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 							remarks.add(cr);
 						} else if (fkfound > 1) {
 							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.ManyFKFieldsFound",LoadSatMeta.ATTRIBUTE_SURR_FK) + Const.CR;
+									"LoadSatMeta.CheckResult.ManyFKFieldsFound",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
 							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 							remarks.add(cr);
 						}
@@ -378,15 +299,12 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 							remarks.add(cr);
 						}
-						
-						
 					} else {
 						error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.CouldNotReadTableInfo");
 						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 						remarks.add(cr);
 					}
 				}
-
 				
 				if (bufferSize > LoadAnchorMeta.MAX_SUGG_BUFFER_SIZE){
 					error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.BufferSize") + Const.CR;
@@ -400,8 +318,8 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 					error_message = "";
 					boolean error_found = false;
 
-					for (int i = 0; i < attField.length; i++) {
-						ValueMetaInterface v = prev.searchValueMeta(attField[i]);
+					for (int i = 0; i < fields.length; i++) {
+						ValueMetaInterface v = prev.searchValueMeta(fields[i]);
 						if (v == null) {
 							if (first) {
 								first = false;
@@ -409,7 +327,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 										+ Const.CR;
 							}
 							error_found = true;
-							error_message += "\t\t" + attField[i] + Const.CR;
+							error_message += "\t\t" + fields[i] + Const.CR;
 						}
 					}
 					if (error_found) {
@@ -450,90 +368,16 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 		}
 	}
 
-	public StepDialogInterface getDialog(Shell shell, StepMetaInterface meta, TransMeta transMeta, String name) {
-		return new LoadSatDialog(shell, meta, transMeta, name);
-	}
-
-	public DatabaseMeta[] getUsedDatabaseConnections() {
-		if (databaseMeta != null) {
-			return new DatabaseMeta[] { databaseMeta };
-		} else {
-			return super.getUsedDatabaseConnections();
-		}
-	}
-
-	public boolean equals(Object other) {
-		if (other == this) {
-			return true;
-		}
-		if (other == null || getClass() != other.getClass()) {
-			return false;
-		}
-
-		LoadSatMeta o = (LoadSatMeta) other;
-
-		if ((getSchemaName() == null && o.getSchemaName() != null)
-				|| (getSchemaName() != null && o.getSchemaName() == null)
-				|| (getSchemaName() != null && o.getSchemaName() != null && !getSchemaName().equals(o.getSchemaName()))) {
-			return false;
-		}
-
-		if ((getSatTable() == null && o.getSatTable() != null) || (getSatTable() != null && o.getSatTable() == null)
-				|| (getSatTable() != null && o.getSatTable() != null && !getSatTable().equals(o.getSatTable()))) {
-			return false;
-		}
-
-		return true;
-	}
-
-	public int getBufferSize() {
-		return bufferSize;
-	}
 	
-	/*
-	 * Validate to avoid senseless BufferSize
-	 */
-	public void setBufferSize(int bSize) {
-		if (bSize < LoadAnchorMeta.MIN_BUFFER_SIZE) {
-			bufferSize = LoadAnchorMeta.MIN_BUFFER_SIZE;
-		}
-		bufferSize = bSize ;
+	//not used with LoadLinkMeta
+	public String getIdKeyTypeString() {
+		return null;
 	}
-	
-	
-	public String getSchemaName() {
-		return schemaName;
+	//not used with LoadLinkMeta
+	public String getOtherTypeString() {
+		return null;
 	}
 
-	public void setSchemaName(String schemaName) {
-		this.schemaName = schemaName;
-	}
-
-	public String getSatTable() {
-		return satTable;
-	}
-
-	public void setSatTable(String anchorTable) {
-		this.satTable = anchorTable;
-	}
-
-
-	public DatabaseMeta getDatabaseMeta() {
-		return databaseMeta;
-	}
-
-	public void setDatabaseMeta(DatabaseMeta databaseMeta) {
-		this.databaseMeta = databaseMeta;
-	}
-
-	
-	public String[] getAttField() {
-		return attField;
-	}
-
-	public String[] getAttCol() {
-		return attCol;
-	}
 
 	public String getFromDateColumn() {
 		return fromDateColumn;
@@ -557,9 +401,6 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 		this.toDateColumn = toDateColumn;
 	}
 
-	public String[] getAttType() {
-		return attType;
-	}
 
 	public String getToDateMaxFlag() {
 		return toDateMaxFlag;
@@ -569,6 +410,7 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 		this.toDateMaxFlag = toDateMaxFlag;
 	}
 
+	
 	public boolean isIdempotent() {
 		return isIdempotent;
 	}
@@ -576,7 +418,6 @@ public class LoadSatMeta extends BaseStepMeta implements StepMetaInterface {
 	public void setIdempotent(boolean isIdempotent) {
 		this.isIdempotent = isIdempotent;
 	}
-
 	
 	public String getFkColumn() {
 		return fkColumn;

@@ -107,49 +107,12 @@ public class LoadSat extends BaseStep implements StepInterface {
 		
 		/***** step-1 --> Query DB and fill bufferSatHistRows  ******/
 
-		// Setting values to the prepared Statement
-		// potentially move that one into "data.addToBufferRows" and step-1 would only set null when buffer not full.
-		for (int i = 0; i < meta.getBufferSize(); i++) {
-			Object[] r;
-
-			try {
-				r = data.getBufferRows().get(i);
-			} catch (IndexOutOfBoundsException e) {
-				// we have a partial filled buffer
-				r = null;
-			}
-			Object key = (r != null) ? r[data.getSatAttsRowIdx()[data.posFk]] : null;
-			data.db.setValue(data.getPrepStmtLookup(), data.getSatRowMeta().getValueMeta(data.posFk),key,i+1);
-		}
+		int nb = data.populateLookupMap(meta, meta.getBufferSize());
+		logBasic("Buffer filled, number of fetched sat history records from DB= " + nb);
 		
-		//final parameters (minDate) to limit historical sat rows
-		if (data.posFromDate != -1){
-			java.util.Date minDate = new Date(data.minDateBuffer);
-			data.db.setValue(data.getPrepStmtLookup(), data.getSatRowMeta().getValueMeta(data.posFromDate)
-					,minDate,meta.getBufferSize()+1);
-		}
-		
-		// go fetch data in DB and populate satHistRows buffer
-		ResultSet rs;
-		try {
-			rs = data.getPrepStmtLookup().executeQuery();
-		} catch (SQLException e) {
-			throw new KettleDatabaseException("Unable to execute Lookup query", e);
-		}
-
-		for (Object[] r : data.db.getRows(rs,0,null)) {
-			CompositeValues v = new CompositeValues(r,0,meta.getAttField().length,data.posFk,data.posFromDate);
-			//flag records coming from DB
-			v.setAsPersisted();
-			// records from DB have integrity so no duplicates expected
-			if (! data.getBufferSatHistRows().add(v) ){
-				logError("Check DB state, sat/att table has row duplicates: " + meta.getSatTable() );
-			}
-		}
-
 		
 		/***** step-2 --> Add new records in bufferSatHistRows, ignore & send downstream duplicates ******
-		 *******          This guarantees sorting necessary for Idempotent & "toDate" handling ******/
+		 *******          This guarantees proper sorting needed for Idempotent & "toDate"          ******/
 		
 		// using Iterator to remove safely unneeded rows
 		Iterator<Object[]> iter = data.getBufferRows().iterator();
@@ -163,7 +126,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				putRow(data.outputRowMeta, bufferRow);
 				iter.remove();
 				incrementLinesSkipped();
-				//logError("attrappe un duplique !!!");
+				//logDebug("attrappe un duplique !!!");
 			}
 		}
 		
@@ -186,7 +149,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				if (prevRow != null && prevRow.equalsIgnoreFromDate(satRow)){
 					iter.remove();
 					incrementLinesSkipped();
-					logError("trouve idempotent row:" + satRow + " avec le meme prec=" + prevRow);
+					//logDebug("trouve idempotent row:" + satRow + " avec le meme prec=" + prevRow);
 				}
 			}
 		}
@@ -239,10 +202,10 @@ public class LoadSat extends BaseStep implements StepInterface {
 			//sat rows have "toDate" and require update
 			if (updateParams != null && updateParams.size() > 0 ){
 				for (Object[] p : updateParams){
-					addBatchToStmt(data.getPrepStmtUpdateSat(),data.getUpToDateRowMeta(), p, null);
+					addBatchToStmt(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(), p, null);
 					incrementLinesUpdated();
 				}
-				executeBatch(data.getPrepStmtUpdateSat(),data.getUpToDateRowMeta(),updateParams.size());
+				executeBatch(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(),updateParams.size());
 			}
 			
 			//Reach the point where all rows have safely landed in DB
@@ -257,9 +220,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				throw new IllegalStateException("Buffer should be empty, check program logic");		
 		}
 		
-		data.initializeBuffers(meta.getBufferSize());
-		data.clearPrepStmts();
-
+		data.emptyBuffersAndClearPrepStmts();
 		
 		
 		/***** step-6 --> Continue processing or Exit if no more rows expected *****/
@@ -271,11 +232,11 @@ public class LoadSat extends BaseStep implements StepInterface {
 		}
 	}
 
+	
 	/*
 	 * TODO: Check out scenario where Batch would not be appropriate
 	 * 
 	 * ex. using unique Connection getTransMeta().isUsingUniqueConnections())?
-	 * 
 	 */
 	private void addBatchToStmt(PreparedStatement stmt, RowMetaInterface rowMeta, 
 						Object[] values, Object optionalToDate) throws KettleDatabaseException {
@@ -327,22 +288,17 @@ public class LoadSat extends BaseStep implements StepInterface {
 	
 	
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {
-
-		//probably safer to clone rowMeta to pass downstream
+		//safer to clone rowMeta for passing downstream
 		data.outputRowMeta = getInputRowMeta().clone();
 	    //although no change we still call getFields (ref. "InsertUpdate" step)
 		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
 		
-		// Initialize the indexes of sat atts...
-		data.initSatAttsRowIdx(meta);
-
-		//initialize buffer and size
-		data.initializeBuffers(meta.getBufferSize());
-
+		// Initialize the data state 
+		data.initializeRowProcessing(meta);
 		// initialize all PreparedStmt
 		data.initPrepStmtLookup(meta);
 		data.initPrepStmtInsert(meta);
-		if (!Const.isEmpty(meta.getToDateColumn())) {
+		if (!meta.isToDateColumnUsed()) {
 			data.initPrepStmtUpdate(meta);
 		}
 
@@ -356,9 +312,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 				logError(BaseMessages.getString(PKG, "Load.Init.ConnectionMissing", getStepname()));
 				return false;
 			}
-
-			data.setRealSchemaName(meta.getDatabaseMeta(), meta.getSchemaName());
-			data.setQualifiedSatTable(meta.getDatabaseMeta(), meta.getSatTable());
 
 			data.db = new Database(this, meta.getDatabaseMeta());
 			data.db.shareVariablesWith(this);

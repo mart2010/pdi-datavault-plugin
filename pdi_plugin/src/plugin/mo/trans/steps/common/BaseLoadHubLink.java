@@ -130,7 +130,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		
 		/***** step-1 --> Query DB and fill LookupMap  ******/
 
-		int nbLookup = data.populateMap(meta, data.getBufferRows(),meta.getBufferSize());
+		int nbLookup = data.populateMap(data.getBufferRows(),meta.getBufferSize());
 	
 		//log.logBasic("...lookup return no of ele:" + nbLookup);
 		
@@ -179,7 +179,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		//WITH THIS CHECK, MAY BE GOOD FOR MULTI-THREADED SUPPORT!!!
 		data.executeBatchInsert(meta, queryParams.size());
 		
-		int rowsAdded = data.populateMap(meta, queryParams,meta.getBufferSize());		
+		int rowsAdded = data.populateMap(queryParams,meta.getBufferSize());		
 		if (rowsAdded != queryParams.size()){
 			data.db.rollback();
 			throw new IllegalStateException("DB state error, nb of new keys loaded= " 

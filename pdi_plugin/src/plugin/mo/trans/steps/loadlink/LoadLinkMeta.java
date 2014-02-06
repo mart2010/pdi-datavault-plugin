@@ -68,7 +68,6 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 	public String getOtherTypeString() {
 		return OTHER_TYPE;
 	}
-
 	
 	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
@@ -76,7 +75,6 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 		return new BaseLoadHubLink(stepMeta, stepDataInterface, copyNr, transMeta, trans);
 	}
 
-	
 	@Override
 	public StepDataInterface getStepData() {
 		return new LoadHubLinkData(this.getLog());
@@ -142,7 +140,6 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 		}
 	}
 
-	
 	public void readRep(Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases)
 			throws KettleException {
 		try {
