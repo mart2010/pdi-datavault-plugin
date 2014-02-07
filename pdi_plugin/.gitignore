@@ -11,3 +11,8 @@ lib*/
 # ignore all files ending with ~
 *~
 
+# ignore classpath
+.classpath
+
+
+

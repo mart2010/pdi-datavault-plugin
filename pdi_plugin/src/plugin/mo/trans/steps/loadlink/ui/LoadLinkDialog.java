@@ -24,6 +24,7 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
@@ -91,7 +92,6 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 	private Label wlTechKey;
 	private CCombo wTechKey;
 
-	private Group gSurrGroup;
 	private FormData fdSurrGroup;
 
 	private Label wlAutoinc;
@@ -329,77 +329,35 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 		setButtonPositions(new Button[] { wOK, wCancel, wGet }, margin, null);
 
-		// Audit RecSrc
-		// RecSrc Value ...
-		wlAuditRecSrcVal = new Label(shell, SWT.RIGHT);
-		wlAuditRecSrcVal.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcVal.Label"));
-		props.setLook(wlAuditRecSrcVal);
-		FormData fdlRcVal = new FormData();
-		fdlRcVal.left = new FormAttachment(0, 0);
-		fdlRcVal.right = new FormAttachment(middle, -margin);
-		fdlRcVal.bottom = new FormAttachment(wOK, -4*margin);
-		wlAuditRecSrcVal.setLayoutData(fdlRcVal);
 		
-		wAuditRecSrcVal = new TextVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wAuditRecSrcVal);
-		wAuditRecSrcVal.addModifyListener(lsMod);
-		FormData fdRcVal = new FormData();
-		fdRcVal.bottom = new FormAttachment(wOK, -4*margin);
-		fdRcVal.left = new FormAttachment(middle, 0);
-		fdRcVal.right = new FormAttachment(100, 0);
-		wAuditRecSrcVal.setLayoutData(fdRcVal);
-
-		//RecSrc Col
-		wlAuditRecSrcCol = new Label(shell, SWT.RIGHT);
-		wlAuditRecSrcCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcCol.Label"));
-		props.setLook(wlAuditRecSrcCol);
-		FormData fdlRecSrcField = new FormData();
-		fdlRecSrcField.left = new FormAttachment(0, 0);
-		fdlRecSrcField.right = new FormAttachment(middle, -margin);
-		fdlRecSrcField.bottom = new FormAttachment(wAuditRecSrcVal, -margin);
-		wlAuditRecSrcCol.setLayoutData(fdlRecSrcField);
-		
-		wAuditRecSrcCol = new CCombo(shell, SWT.BORDER );
-		wAuditRecSrcCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditRecField.Tooltip"));
-		props.setLook(wAuditRecSrcCol);
-		wAuditRecSrcCol.addModifyListener(lsMod);
-		FormData fdRecSrcField = new FormData();
-		fdRecSrcField.left = new FormAttachment(middle, 0);
-		fdRecSrcField.right = new FormAttachment(100, 0);
-		fdRecSrcField.bottom = new FormAttachment(wAuditRecSrcVal, -margin);
-		wAuditRecSrcCol.setLayoutData(fdRecSrcField);
-		wAuditRecSrcCol.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent arg0) {}
-			public void focusGained(FocusEvent arg0) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				String t = wAuditRecSrcCol.getText();
-				setColumnsCombo(wAuditRecSrcCol, ValueMetaInterface.TYPE_STRING, -1);
-				shell.setCursor(null);
-				wAuditRecSrcCol.setText(t);
-				busy.dispose();
-			}
-		});
+		// The Audit Group 
+		Group wAuditFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
+		wAuditFields.setText( BaseMessages.getString( PKG, "LoadDialog.AuditGroupFields.Label" ) );
+		FormLayout auditGroupLayout = new FormLayout();
+	    auditGroupLayout.marginWidth = 3;
+	    auditGroupLayout.marginHeight = 3;
+	    wAuditFields.setLayout( auditGroupLayout );
+	    props.setLook( wAuditFields );
 
 		
 		// Audit DTS :
-		wlAuditDTSCol = new Label(shell, SWT.RIGHT);
+		wlAuditDTSCol = new Label(wAuditFields, SWT.RIGHT);
 		wlAuditDTSCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Label"));
 		props.setLook(wlAuditDTSCol);
 		FormData fdlLastUpdateField = new FormData();
 		fdlLastUpdateField.left = new FormAttachment(0, 0);
 		fdlLastUpdateField.right = new FormAttachment(middle, -margin);
-		fdlLastUpdateField.bottom = new FormAttachment(wAuditRecSrcCol, -margin);
+		fdlLastUpdateField.top = new FormAttachment(wAuditFields, margin);
 		wlAuditDTSCol.setLayoutData(fdlLastUpdateField);
 		
-		wAuditDTSCol = new CCombo(shell, SWT.BORDER );
+		wAuditDTSCol = new CCombo(wAuditFields, SWT.BORDER );
 		wAuditDTSCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Tooltip"));
 		props.setLook(wAuditDTSCol);
 		wAuditDTSCol.addModifyListener(lsMod);
 		FormData fdLastUpdateField = new FormData();
 		fdLastUpdateField.left = new FormAttachment(middle, 0);
 		fdLastUpdateField.right = new FormAttachment(100, 0);
-		fdLastUpdateField.bottom = new FormAttachment(wAuditRecSrcCol, -margin);
+		fdLastUpdateField.top = new FormAttachment(wAuditFields, margin);
 		wAuditDTSCol.setLayoutData(fdLastUpdateField);
 		wAuditDTSCol.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent arg0) {}
@@ -414,15 +372,115 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 			}
 		});
 
+		//RecSrc Col
+		wlAuditRecSrcCol = new Label(wAuditFields, SWT.RIGHT);
+		wlAuditRecSrcCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcCol.Label"));
+		props.setLook(wlAuditRecSrcCol);
+		FormData fdlRecSrcField = new FormData();
+		fdlRecSrcField.left = new FormAttachment(0, 0);
+		fdlRecSrcField.right = new FormAttachment(middle, -margin);
+		fdlRecSrcField.top = new FormAttachment(wAuditDTSCol, margin);
+		wlAuditRecSrcCol.setLayoutData(fdlRecSrcField);
 		
-		// Creation of surrogate key
-		gSurrGroup = new Group(shell, SWT.SHADOW_ETCHED_IN);
+		wAuditRecSrcCol = new CCombo(wAuditFields, SWT.BORDER );
+		wAuditRecSrcCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditRecField.Tooltip"));
+		props.setLook(wAuditRecSrcCol);
+		wAuditRecSrcCol.addModifyListener(lsMod);
+		FormData fdRecSrcField = new FormData();
+		fdRecSrcField.left = new FormAttachment(middle, 0);
+		fdRecSrcField.right = new FormAttachment(100, 0);
+		fdRecSrcField.top = new FormAttachment(wAuditDTSCol, margin);
+		wAuditRecSrcCol.setLayoutData(fdRecSrcField);
+		wAuditRecSrcCol.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				String t = wAuditRecSrcCol.getText();
+				setColumnsCombo(wAuditRecSrcCol, ValueMetaInterface.TYPE_STRING, -1);
+				shell.setCursor(null);
+				wAuditRecSrcCol.setText(t);
+				busy.dispose();
+			}
+		});
+	    
+		// RecSrc Value ...
+		wlAuditRecSrcVal = new Label(wAuditFields, SWT.RIGHT);
+		wlAuditRecSrcVal.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcVal.Label"));
+		props.setLook(wlAuditRecSrcVal);
+		FormData fdlRcVal = new FormData();
+		fdlRcVal.left = new FormAttachment(0, 0);
+		fdlRcVal.right = new FormAttachment(middle, -margin);
+		fdlRcVal.top = new FormAttachment(wAuditRecSrcCol, margin);
+		wlAuditRecSrcVal.setLayoutData(fdlRcVal);
+		
+		wAuditRecSrcVal = new TextVar(transMeta, wAuditFields, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		props.setLook(wAuditRecSrcVal);
+		wAuditRecSrcVal.addModifyListener(lsMod);
+		FormData fdRcVal = new FormData();
+		fdRcVal.top = new FormAttachment(wAuditRecSrcCol, margin);
+		fdRcVal.left = new FormAttachment(middle, 0);
+		fdRcVal.right = new FormAttachment(100, 0);
+		wAuditRecSrcVal.setLayoutData(fdRcVal);
+
+		//Fixing the Audit group 
+	    FormData fdAuditGroup = new FormData();
+	    fdAuditGroup.left = new FormAttachment( 0, 0 );
+	    fdAuditGroup.right = new FormAttachment( 100, 0 );
+	    fdAuditGroup.bottom = new FormAttachment( wOK, -2*margin );
+	    wAuditFields.setLayoutData( fdAuditGroup );
+
+		
+		// The Key Creation Group 
+		Group gKeyCreationFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
+		gKeyCreationFields.setText( BaseMessages.getString( PKG, "LoadDialog.KeyGenGroupFields.Label" ) );
+	    
+		FormLayout keyGroupLayout = new FormLayout();
+	    keyGroupLayout.marginWidth = 3;
+	    keyGroupLayout.marginHeight = 3;
+	    gKeyCreationFields.setLayout( keyGroupLayout );
+	    props.setLook( gKeyCreationFields );
+
+		// Tech/surr key column:
+		wlTechKey = new Label(gKeyCreationFields, SWT.RIGHT);
+		wlTechKey.setText(BaseMessages.getString(PKG, "LoadLinkDialog.SurrKey.Label"));
+		props.setLook(wlTechKey);
+		FormData fdlTk = new FormData();
+		fdlTk.left = new FormAttachment(0, 0);
+		fdlTk.right = new FormAttachment(middle, -margin);
+		fdlTk.top = new FormAttachment(gKeyCreationFields, margin);
+		wlTechKey.setLayoutData(fdlTk);
+
+		wTechKey = new CCombo(gKeyCreationFields, SWT.BORDER | SWT.READ_ONLY);
+		props.setLook(wTechKey);
+		// set its listener
+		wTechKey.addModifyListener(lsMod);
+		FormData fdTk = new FormData();
+		fdTk.left = new FormAttachment(middle, 0);
+		fdTk.top = new FormAttachment(gKeyCreationFields, margin);
+		fdTk.right = new FormAttachment(100, 0);
+		wTechKey.setLayoutData(fdTk);
+		wTechKey.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent arg0) {}
+			public void focusGained(FocusEvent arg0) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				setColumnsCombo(wTechKey, ValueMetaInterface.TYPE_INTEGER,-1);
+				shell.setCursor(null);
+				busy.dispose();
+			}
+		});
+
+
+	    
+		// Key generation method Group
+	    Group gSurrGroup = new Group(gKeyCreationFields, SWT.SHADOW_ETCHED_IN);
 		gSurrGroup.setText(BaseMessages.getString(PKG, "LoadDialog.SurrGroup.Label"));
 		GridLayout gridLayout = new GridLayout(3, false);
 		gSurrGroup.setLayout(gridLayout);
 		fdSurrGroup = new FormData();
 		fdSurrGroup.left = new FormAttachment(middle, 0);
-		fdSurrGroup.bottom = new FormAttachment(wAuditDTSCol, -margin);
+		fdSurrGroup.top = new FormAttachment(wTechKey, margin);
 		fdSurrGroup.right = new FormAttachment(100, 0);
 		gSurrGroup.setBackground(shell.getBackground());
 
@@ -489,44 +547,20 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		setTableMax();
 		setSequence();
 		setAutoincUse();
-
 		
-		// Tech/surr key column:
-		wlTechKey = new Label(shell, SWT.RIGHT);
-		wlTechKey.setText(BaseMessages.getString(PKG, "LoadLinkDialog.SurrKey.Label"));
-		props.setLook(wlTechKey);
-		FormData fdlTk = new FormData();
-		fdlTk.left = new FormAttachment(0, 0);
-		fdlTk.right = new FormAttachment(middle, -margin);
-		fdlTk.bottom = new FormAttachment(gSurrGroup, -margin);
-		wlTechKey.setLayoutData(fdlTk);
+		//Fixing Key Creation Group 
+	    FormData fdKeyGroup = new FormData();
+	    fdKeyGroup.left = new FormAttachment( 0, 0 );
+	    fdKeyGroup.right = new FormAttachment( 100, 0 );
+	    fdKeyGroup.bottom = new FormAttachment( wAuditFields, -margin );
+	    gKeyCreationFields.setLayoutData( fdKeyGroup );
 
-		wTechKey = new CCombo(shell, SWT.BORDER | SWT.READ_ONLY);
-		props.setLook(wTechKey);
-		// set its listener
-		wTechKey.addModifyListener(lsMod);
-		FormData fdTk = new FormData();
-		fdTk.left = new FormAttachment(middle, 0);
-		fdTk.bottom = new FormAttachment(gSurrGroup, -margin);
-		fdTk.right = new FormAttachment(100, 0);
-		wTechKey.setLayoutData(fdTk);
-		wTechKey.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent arg0) {}
-			public void focusGained(FocusEvent arg0) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				setColumnsCombo(wTechKey, ValueMetaInterface.TYPE_INTEGER,-1);
-				shell.setCursor(null);
-				busy.dispose();
-			}
-		});
-
-		// to fix the Grid
+		// fixing the Mapping Grid
 		FormData fdKey = new FormData();
 		fdKey.left = new FormAttachment(0, 0);
 		fdKey.top = new FormAttachment(wlKey, margin);
 		fdKey.right = new FormAttachment(100, 0);
-		fdKey.bottom = new FormAttachment(wTechKey, -margin);
+		fdKey.bottom = new FormAttachment(gKeyCreationFields, -margin);
 		wKey.setLayoutData(fdKey);
 
 		//

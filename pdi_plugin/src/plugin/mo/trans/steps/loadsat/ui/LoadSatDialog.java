@@ -359,7 +359,6 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		// The Audit Group 
 		Group wAuditFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
 		wAuditFields.setText( BaseMessages.getString( PKG, "LoadDialog.AuditGroupFields.Label" ) );
-	    
 		FormLayout auditGroupLayout = new FormLayout();
 	    auditGroupLayout.marginWidth = 3;
 	    auditGroupLayout.marginHeight = 3;
@@ -452,6 +451,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		fdRcVal.right = new FormAttachment(100, 0);
 		wAuditRecSrcVal.setLayoutData(fdRcVal);
 
+		
 		//Fixing the Audit group 
 	    FormData fdAuditGroup = new FormData();
 	    fdAuditGroup.left = new FormAttachment( 0, 0 );
@@ -505,7 +505,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 
 		// Expire toDate MAX flag value 
 		wlToDateMax = new Label(wClosingDateFields, SWT.RIGHT);
-	    String flagText = BaseMessages.getString(PKG, "LoadSatDialog.ExpRecFlag.Label") + " (" + LoadSatMeta.DATE_FORMAT + ")";
+	    String flagText = BaseMessages.getString(PKG, "LoadSatDialog.ExpRecFlag.Label");
 		wlToDateMax.setText(flagText);
 		props.setLook(wlToDateMax);
 		FormData fdlToDateMax = new FormData();
@@ -523,6 +523,16 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		fdToDateMax.top = new FormAttachment(wcbToDateCol, margin);
 		wToDateMax.setLayoutData(fdToDateMax);
 
+		Label wlToDateFlag = new Label(wClosingDateFields, SWT.RIGHT);
+	    wlToDateFlag.setText("("+LoadSatMeta.DATE_FORMAT+")");
+		props.setLook(wlToDateFlag);
+		FormData fdlToDateFlag = new FormData();
+		fdlToDateFlag.left = new FormAttachment(wToDateMax, margin);
+		fdlToDateFlag.top = new FormAttachment(wcbToDateCol, 2*margin);
+		wlToDateFlag.setLayoutData(fdlToDateFlag);
+		
+		
+		
 		//Fixing the "ClosingDate" group 
 	    FormData fdOptGroup = new FormData();
 	    fdOptGroup.left = new FormAttachment( 0, 0 );
