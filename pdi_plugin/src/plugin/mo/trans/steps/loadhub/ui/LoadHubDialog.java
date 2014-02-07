@@ -344,7 +344,7 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		FormData fdRcVal = new FormData();
 		fdRcVal.bottom = new FormAttachment(wOK, -4*margin);
 		fdRcVal.left = new FormAttachment(middle, 0);
-		fdRcVal.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
+		fdRcVal.right = new FormAttachment(100, 0);
 		wAuditRecSrcVal.setLayoutData(fdRcVal);
 
 		//RecSrc Col

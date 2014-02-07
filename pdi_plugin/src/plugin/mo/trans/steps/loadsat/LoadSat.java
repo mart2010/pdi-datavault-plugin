@@ -108,8 +108,10 @@ public class LoadSat extends BaseStep implements StepInterface {
 		/***** step-1 --> Query DB and fill bufferSatHistRows  ******/
 
 		int nb = data.populateLookupMap(meta, meta.getBufferSize());
-		logBasic("Buffer filled, number of fetched sat history records from DB= " + nb);
-		
+		if (log.isDetailed()){
+			logDetailed("Buffer filled, number of fetched sat history records from DB= " + nb);	
+		}
+
 		
 		/***** step-2 --> Add new records in bufferSatHistRows, ignore & send downstream duplicates ******
 		 *******          This guarantees proper sorting needed for Idempotent & "toDate"          ******/
@@ -120,7 +122,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 			Object[] bufferRow = iter.next();
 			CompositeValues newRow = new CompositeValues(bufferRow,data.getSatAttsRowIdx(),
 											data.posFkInRow,data.posFromDateInRow);
-
 			if (!data.getBufferSatHistRows().add(newRow)){
 				//ignore duplicate (e.g. dups in stream, or immutable attr..)
 				putRow(data.outputRowMeta, bufferRow);
@@ -131,12 +132,13 @@ public class LoadSat extends BaseStep implements StepInterface {
 		}
 		
 		
-		/***** step-3 --> When Idempotent remove redundant record ******/
+		/***** step-3 --> When Idempotent remove new redundant record ******/
 		
 		if (meta.isIdempotent()) {
 			Iterator<CompositeValues> iterSat = data.getBufferSatHistRows().iterator();
 			while (iterSat.hasNext()) {
 			    CompositeValues satRow = iterSat.next();
+			    //ignore persisted sat record
 			    if (satRow.isPersisted()){
 			    	continue;
 			    }
@@ -157,8 +159,8 @@ public class LoadSat extends BaseStep implements StepInterface {
 
 		/***** step-4 --> Prepare Batch insert & Set ToDate if needed ******/
 		
-		//Cannot do simultaneous addBatch() on different prepareStmt 
-		//need to preserve params for any Sat prevRow updates 
+		//No simultaneous addBatch() possible on different prepareStmt 
+		//Must preserve params with Sat updates 
 		List<Object[]> updateParams = null;
 		if (meta.isToDateColumnUsed()) {
 			updateParams = new ArrayList<Object[]>();
@@ -178,11 +180,11 @@ public class LoadSat extends BaseStep implements StepInterface {
 					optToDate = (nextRec == null) ? data.toDateMaxFlag : nextRec.getFromDateValue() ;	
 				}
 				//ready to batch the newRow
-				addBatchToStmt(data.getPrepStmtInsertSat(), data.getSatRowMeta(), rec.getValues(), optToDate);
+				data.addBatchInsert(meta, rec.getValues(), optToDate);
 				insertCtn++;
 				incrementLinesOutput();
 			} else {
-			//for existing, update toDate if needed and new record is found next
+			//for existing, add param to update (when new record is found next)
 				if (meta.isToDateColumnUsed() && nextRec != null && !nextRec.isPersisted()){
 					updateParams.add(new Object[]{nextRec.getFromDateValue()
 							,rec.getPkeyValue()
@@ -191,21 +193,20 @@ public class LoadSat extends BaseStep implements StepInterface {
 			}
 		}
 		
-	
 
 		/***** step-5 --> Complete Stmt batch, send remaining rows & re-init buffer *****/
 		
 		if (insertCtn > 0){
 			//execute Batch insert for all new Rows
-			executeBatch(data.getPrepStmtInsertSat(),data.getSatRowMeta(),insertCtn);
+			data.executeBatch(data.getPrepStmtInsertSat(),data.getInsertRowMeta(),insertCtn);
 			
 			//sat rows have "toDate" and require update
 			if (updateParams != null && updateParams.size() > 0 ){
 				for (Object[] p : updateParams){
-					addBatchToStmt(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(), p, null);
+					data.addBatchUpdateStmt(p);
 					incrementLinesUpdated();
 				}
-				executeBatch(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(),updateParams.size());
+				data.executeBatch(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(),updateParams.size());
 			}
 			
 			//Reach the point where all rows have safely landed in DB
@@ -230,61 +231,9 @@ public class LoadSat extends BaseStep implements StepInterface {
 			setOutputDone();
 			return false;
 		}
-	}
-
 	
-	/*
-	 * TODO: Check out scenario where Batch would not be appropriate
-	 * 
-	 * ex. using unique Connection getTransMeta().isUsingUniqueConnections())?
-	 */
-	private void addBatchToStmt(PreparedStatement stmt, RowMetaInterface rowMeta, 
-						Object[] values, Object optionalToDate) throws KettleDatabaseException {
-		try {
-			data.db.setValues(rowMeta,values, stmt);
-			
-			//optionally set the toDate 
-			if (optionalToDate != null){
-				data.db.setValue(stmt, rowMeta.getValueMeta(data.posFromDate), optionalToDate ,values.length +1);
-			}
-			stmt.addBatch();
-			//logError("inserting int batch: " + Arrays.deepToString(values));
-		} catch ( SQLException ex ) {
-		      throw new KettleDatabaseException( "Error adding \"batch\" for rowMeta: " + rowMeta.toStringMeta(), ex );
-		} 
 	}
 	
-	/*
-	 * 
-	 */
-	private void executeBatch(PreparedStatement stmt, RowMetaInterface rowMeta, int updateCtnExpected) 
-			throws KettleDatabaseException {
-        try {
-        	stmt. executeBatch();
-	      	stmt.clearBatch();
-          } catch ( BatchUpdateException ex ) {
-        	  int[] nbUpd = ex.getUpdateCounts();
-        	  if (updateCtnExpected == nbUpd.length){
-        		  //jdbc driver continued processing all rows 
-        		  logError("Batch Exception but JDBC driver processed all rows");
-        		  if (!Const.isEmpty( data.db.getConnectionGroup())) {
-        			 // logError("Ignore when running in parrallel -unique constraint violation expected");
-        			  throw new KettleDatabaseException( ex );
-        			  //return;
-        		  } else {
-        			 //logError("Continue processing, but check database integrity");
-        			  throw new KettleDatabaseException( ex );
-        			  //return;
-        		  }
-        	  } else {
-        		  logError("Batch Exception and not all rows prcessed",ex);
-        		  throw new KettleDatabaseException( ex ); 
-        	  }
-          } catch ( SQLException ex ) {
-                  throw new KettleDatabaseException( "Unexpected error with batch", ex );
-          }  
-	}
-		
 	
 	
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {
@@ -301,10 +250,9 @@ public class LoadSat extends BaseStep implements StepInterface {
 		if (!meta.isToDateColumnUsed()) {
 			data.initPrepStmtUpdate(meta);
 		}
-
-		
 	}
 
+	
 	public boolean init(StepMetaInterface sii, StepDataInterface sdi) {
 		
 		if (super.init(sii, sdi)) {

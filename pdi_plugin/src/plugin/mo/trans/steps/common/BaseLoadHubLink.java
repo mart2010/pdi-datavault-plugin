@@ -159,7 +159,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 			}
 
 			//Append Key when managed by TABLEMAX
-			if (meta.isTableMax()){
+			if (meta.isMethodTableMax()){
 				//fetch the next Key (this takes care of synchronization, however it changes 
 				//rowMeta state info in Database, so we cannot call other methods like getRows()..
 				newKey = data.db.getNextValue( getTrans().getCounters(), meta.getSchemaName(),

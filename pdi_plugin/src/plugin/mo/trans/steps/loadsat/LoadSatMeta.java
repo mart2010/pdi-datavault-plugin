@@ -87,7 +87,7 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	}
 	@Override
 	public StepDataInterface getStepData() {
-		return new LoadSatData();
+		return new LoadSatData(getLog());
 	}
 
 	public StepDialogInterface getDialog(Shell shell, StepMetaInterface meta, TransMeta transMeta, String name) {

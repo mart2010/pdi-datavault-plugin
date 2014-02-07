@@ -387,11 +387,11 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 	
 
-	public boolean isAutoIncrement() {
+	public boolean isMethodAutoIncrement() {
 		return CREATION_METHOD_AUTOINC.equals(keyGeneration);
 	}
 
-	public boolean isTableMax() {
+	public boolean isMethodTableMax() {
 		return CREATION_METHOD_TABLEMAX.equals(keyGeneration);
 	}
 
