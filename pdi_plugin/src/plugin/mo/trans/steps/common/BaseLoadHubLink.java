@@ -134,8 +134,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 	
 		//log.logBasic("...lookup return no of ele:" + nbLookup);
 		
-		/***** step-2 --> Manage existing link: add key field, send downstream & remove from buffer *****/
-		
+		/***** step-2 --> Manage existing rec: add key field, send downstream & remove from buffer *****/
 		if (nbLookup > 0){
 			processBufferAndSendRows(getInputRowMeta().size());	
 			// Processing buffer finished when all key found!
@@ -233,7 +232,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		*/
 		data.initializeRowProcessing((BaseLoadMeta) meta, getInputRowMeta());
 		data.initPrepStmtLookup( (BaseLoadMeta) meta, meta.getBufferSize(), getInputRowMeta());
-		data.initPrepStmtInsert( (BaseLoadMeta) meta, meta.getKeyGeneration(), meta.getSchemaName(), getInputRowMeta());
+		data.initPrepStmtInsert( (BaseLoadMeta) meta, getInputRowMeta());
 	}		
 		
 	

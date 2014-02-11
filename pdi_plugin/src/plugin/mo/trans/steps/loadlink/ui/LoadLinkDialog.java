@@ -869,13 +869,13 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		
 		String surrKeyCreation = inputMeta.getKeyGeneration();
 
-		if (LoadLinkMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
+		if (BaseLoadMeta.CREATION_METHOD_AUTOINC.equals(surrKeyCreation)) {
 			wAutoinc.setSelection(true);
-		} else if ((LoadLinkMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
+		} else if ((BaseLoadMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
 			wSeqButton.setSelection(true);
 		} else { // TableMax is also the default when no creation is yet defined
 			wTableMax.setSelection(true);
-			inputMeta.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_TABLEMAX);
+			inputMeta.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_TABLEMAX);
 		}
 		if (inputMeta.getSequenceName() != null) {
 			wSeq.setText(inputMeta.getSequenceName());
@@ -944,12 +944,12 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		
 		
 		if (wAutoinc.getSelection()) {
-			in.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_AUTOINC);
+			in.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_AUTOINC);
 		} else if (wSeqButton.getSelection()) {
-			in.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_SEQUENCE);
+			in.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_SEQUENCE);
 			in.setSequenceName(wSeq.getText());
 		} else { // TableMax
-			in.setKeyGeneration(LoadAnchorMeta.CREATION_METHOD_TABLEMAX);
+			in.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_TABLEMAX);
 		}
 		
 	}

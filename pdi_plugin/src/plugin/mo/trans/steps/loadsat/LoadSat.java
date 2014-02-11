@@ -111,7 +111,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 		if (log.isDetailed()){
 			logDetailed("Buffer filled, number of fetched sat history records from DB= " + nb);	
 		}
-
 		
 		/***** step-2 --> Add new records in bufferSatHistRows, ignore & send downstream duplicates ******
 		 *******          This guarantees proper sorting needed for Idempotent & "toDate"          ******/
@@ -122,6 +121,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 			Object[] bufferRow = iter.next();
 			CompositeValues newRow = new CompositeValues(bufferRow,data.getSatAttsRowIdx(),
 											data.posFkInRow,data.posFromDateInRow);
+			
 			if (!data.getBufferSatHistRows().add(newRow)){
 				//ignore duplicate (e.g. dups in stream, or immutable attr..)
 				putRow(data.outputRowMeta, bufferRow);
@@ -130,9 +130,19 @@ public class LoadSat extends BaseStep implements StepInterface {
 				//logDebug("attrappe un duplique !!!");
 			}
 		}
+		// Finish when all buffer rows are duplicates 
+		if (data.getBufferRows().size() == 0) {
+			if (!data.finishedAllRows) {
+				return true;
+			} else {
+				setOutputDone();
+				return false;
+			}
+		}
+
 		
 		
-		/***** step-3 --> When Idempotent remove new redundant record ******/
+		/***** step-3 --> When Idempotent remove new duplicates record ******/
 		
 		if (meta.isIdempotent()) {
 			Iterator<CompositeValues> iterSat = data.getBufferSatHistRows().iterator();
@@ -149,7 +159,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				}
 				//Remove when previous is identical
 				if (prevRow != null && prevRow.equalsIgnoreFromDate(satRow)){
-					iter.remove();
+					iterSat.remove();
 					incrementLinesSkipped();
 					//logDebug("trouve idempotent row:" + satRow + " avec le meme prec=" + prevRow);
 				}
@@ -169,6 +179,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 		int insertCtn = 0;
 		
 		for (CompositeValues rec : data.getBufferSatHistRows()){
+		
 			CompositeValues nextRec = data.getBufferSatHistRows().higher(rec);
 			if (nextRec != null && !nextRec.getPkeyValue().equals(rec.getPkeyValue())){
 				nextRec = null;
@@ -184,7 +195,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				insertCtn++;
 				incrementLinesOutput();
 			} else {
-			//for existing, add param to update (when new record is found next)
+			//for existing record followed by a new one, add param to update (when)
 				if (meta.isToDateColumnUsed() && nextRec != null && !nextRec.isPersisted()){
 					updateParams.add(new Object[]{nextRec.getFromDateValue()
 							,rec.getPkeyValue()

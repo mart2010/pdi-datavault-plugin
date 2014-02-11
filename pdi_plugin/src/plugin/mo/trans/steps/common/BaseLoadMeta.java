@@ -273,8 +273,8 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	public void setBufferSize(int bSize) {
-		if (bSize < LoadAnchorMeta.MIN_BUFFER_SIZE) {
-			bufferSize = LoadAnchorMeta.MIN_BUFFER_SIZE;
+		if (bSize < BaseLoadMeta.MIN_BUFFER_SIZE) {
+			bufferSize = BaseLoadMeta.MIN_BUFFER_SIZE;
 		}
 		bufferSize = bSize ;
 	}

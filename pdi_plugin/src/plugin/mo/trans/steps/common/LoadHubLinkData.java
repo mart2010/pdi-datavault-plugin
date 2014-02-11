@@ -36,6 +36,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.ui.spoon.trans.LogBrowser;
 
 import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorData;
 import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
@@ -276,8 +277,8 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
-	public void initPrepStmtInsert(BaseLoadMeta meta, String keyGeneration, String sequence,
-			RowMetaInterface inputRowMeta) throws KettleDatabaseException {
+	public void initPrepStmtInsert(BaseLoadMeta meta, RowMetaInterface inputRowMeta) 
+								throws KettleDatabaseException {
 
 		/*
 		 * This applied for both Hub and Link: Column ordering rule: 1- cols
@@ -291,7 +292,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		 * newVal.getValues()) ; TODO: this is supported by Oracle...check
 		 * others and see proper usage
 		 */
-
+		
 		insertRowMeta = new RowMeta();
 		String sqlIns = "INSERT INTO " + qualifiedTable + "( ";
 		String sqlValues = Const.CR + " VALUES (";
@@ -347,18 +348,18 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		// ***********************************************
 		// 4- Handle technical key (PK)
 		// ***********************************************
-		if (keyGeneration.equals(LoadAnchorMeta.CREATION_METHOD_SEQUENCE)) {
+		if (meta.getKeyGeneration().equals(BaseLoadMeta.CREATION_METHOD_SEQUENCE)) {
 			sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getTechKeyCol());
-			// Use Sequence, Oracle syntax: seqname.nextval (may need to remove
-			// Select, From dual clause..)
-			String nextStr = db.getDatabaseMeta().getSeqNextvalSQL(sequence); // .replace("SELECT",
-																				// "").replace("FROM","").replace("dual","");
+			// Hack to remove Select for postgre, and From &dual for Oracle syntax
+			//WILL NOT WORK FOR OTHER MORE EXOTIC "getSeqNextvalSQL" (TODO: should be fixed at PDI level)
+			String nextStr = db.getDatabaseMeta().getSeqNextvalSQL(meta.getSequenceName()).
+							replace("SELECT","").replace("FROM", "").replace("dual","");
 			sqlValues += ", " + nextStr;
-		} else if (keyGeneration.equals(LoadAnchorMeta.CREATION_METHOD_TABLEMAX)) {
+		} else if (meta.getKeyGeneration().equals(BaseLoadMeta.CREATION_METHOD_TABLEMAX)) {
 			sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getTechKeyCol());
 			sqlValues += ", ?";
 			insertRowMeta.addValueMeta(new ValueMetaInteger(meta.getTechKeyCol()));
-		} else if (keyGeneration.equals(LoadAnchorMeta.CREATION_METHOD_AUTOINC)) {
+		} else if (meta.getKeyGeneration().equals(BaseLoadMeta.CREATION_METHOD_AUTOINC)) {
 			// No need to refer to Column except for placeholder special
 			// requirement (ex. Informix)
 			// TODO: test this on Informix...

@@ -306,7 +306,7 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 					}
 				}
 				
-				if (bufferSize > LoadAnchorMeta.MAX_SUGG_BUFFER_SIZE){
+				if (bufferSize > BaseLoadMeta.MAX_SUGG_BUFFER_SIZE){
 					error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.BufferSize") + Const.CR;
 					cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 					remarks.add(cr);
