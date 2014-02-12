@@ -126,12 +126,12 @@ public class LoadSat extends BaseStep implements StepInterface {
 				//ignore duplicate (e.g. dups in stream, or immutable attr..)
 				putRow(data.outputRowMeta, bufferRow);
 				iter.remove();
-				incrementLinesSkipped();
-				//logDebug("attrappe un duplique !!!");
+				//incrementLinesSkipped();
 			}
 		}
-		// Finish when all buffer rows are duplicates 
+		// Finished if all buffer rows are duplicates 
 		if (data.getBufferRows().size() == 0) {
+			data.emptyBuffersAndClearPrepStmts();
 			if (!data.finishedAllRows) {
 				return true;
 			} else {
@@ -148,20 +148,18 @@ public class LoadSat extends BaseStep implements StepInterface {
 			Iterator<CompositeValues> iterSat = data.getBufferSatHistRows().iterator();
 			while (iterSat.hasNext()) {
 			    CompositeValues satRow = iterSat.next();
-			    //ignore persisted sat record
 			    if (satRow.isPersisted()){
 			    	continue;
 			    }
 				CompositeValues prevRow = data.getBufferSatHistRows().lower(satRow);
-				//newRow is 1st sat record 
+				//newRow is very 1st record in history
 				if ((prevRow != null) && !(prevRow.getPkeyValue().equals(satRow.getPkeyValue()))) {
 					prevRow =  null;
 				}
-				//Remove when previous is identical
+				//remove when previous is identical
 				if (prevRow != null && prevRow.equalsIgnoreFromDate(satRow)){
 					iterSat.remove();
-					incrementLinesSkipped();
-					//logDebug("trouve idempotent row:" + satRow + " avec le meme prec=" + prevRow);
+					//incrementLinesSkipped();
 				}
 			}
 		}
@@ -170,16 +168,14 @@ public class LoadSat extends BaseStep implements StepInterface {
 		/***** step-4 --> Prepare Batch insert & Set ToDate if needed ******/
 		
 		//No simultaneous addBatch() possible on different prepareStmt 
-		//Must preserve params with Sat updates 
+		//so must preserve params for sat updates 
 		List<Object[]> updateParams = null;
 		if (meta.isToDateColumnUsed()) {
 			updateParams = new ArrayList<Object[]>();
 		}
-		
 		int insertCtn = 0;
 		
 		for (CompositeValues rec : data.getBufferSatHistRows()){
-		
 			CompositeValues nextRec = data.getBufferSatHistRows().higher(rec);
 			if (nextRec != null && !nextRec.getPkeyValue().equals(rec.getPkeyValue())){
 				nextRec = null;

@@ -131,9 +131,8 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		/***** step-1 --> Query DB and fill LookupMap  ******/
 
 		int nbLookup = data.populateMap(data.getBufferRows(),meta.getBufferSize());
-	
 		//log.logBasic("...lookup return no of ele:" + nbLookup);
-		
+
 		/***** step-2 --> Manage existing rec: add key field, send downstream & remove from buffer *****/
 		if (nbLookup > 0){
 			processBufferAndSendRows(getInputRowMeta().size());	

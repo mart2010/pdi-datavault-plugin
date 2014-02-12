@@ -193,8 +193,8 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		 * FROM [sat_table] Sat 
 		 * WHERE [surrFK] IN ( ?,* ?, ? ... ) 
 		 * AND [fromDate] >= ( SELECT CASE WHEN max([fromDate]) IS
-		 * NOT NULL THEN max([fromDate]) ELSE DATE '0001-01-01' END FROM
-		 * sat_table WHERE [surrFK] = Sat.[surrFK] AND [fromDate] < ? )
+		 * NOT NULL THEN max([fromDate]) ELSE DATE '0001-01-01' END 
+		 * FROM sat_table WHERE [surrFK] = Sat.[surrFK] AND [fromDate] < ? )
 		 */
 		String cols = "";
 

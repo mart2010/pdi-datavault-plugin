@@ -140,19 +140,24 @@ CREATE TABLE `L14_ai` (
 
 select * from target_am.H1;
 select * from target_am.H2;
-select * from target_am.H3;
-select * from target_am.H4;
+select count(*) from target_am.H3;
 select count(*) from target_am.H4;
+select * from target_am.H4;
 
 select * from target_am.L123_ai;
 select count(*) from target_am.L123_ai;
 select * from target_am.L14_ai;
 select count(*) from target_am.L14_ai;
 
+select count(*) from target_am.S2_1;
 select * from target_am.S2_1;
+select count(*) from target_am.S2_2;
 select * from target_am.S2_2;
+select count(*) from target_am.S123_1;
 select * from target_am.S123_1
 ORDER BY 1,4;
+select count(*) from target_am.S123_2;
+
 select * from target_am.S123_2
 ORDER BY 1,4;
 
@@ -166,3 +171,10 @@ delete from target_am.H3;
 delete from target_am.H2;
 delete from target_am.H1;
 
+
+SELECT *
+FROM target_am.s2_1 Sat 
+WHERE h2_ID IN ( 104,105,106,107,104,105,106)  
+AND ValidFrom >= (  SELECT case when max(ValidFrom) is not null then max(ValidFrom) else DATE '1000-01-01' end 
+                    FROM s2_1 
+                    WHERE h2_ID = Sat.h2_ID AND ValidFrom < DATE '2013-01-01' )
