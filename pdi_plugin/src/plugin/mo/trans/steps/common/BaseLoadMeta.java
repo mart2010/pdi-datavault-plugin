@@ -25,6 +25,7 @@ import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
  * Subclass must implement: clone(), loadXML(), check(), getStep(), 
  * getStepData(), getDialog(), complete the partial impl of reading/writing
  * and any override and specialized properties.
+ * 
  * @author mouellet
  *
  */

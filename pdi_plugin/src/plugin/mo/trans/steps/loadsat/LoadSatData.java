@@ -60,6 +60,9 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	// position of FromDate attribute in input row
 	public int posFromDateInRow = -1;
 
+	//position index of fields stored in BINARY in row stream (= null if none)
+	private int[] fieldsInBinary = null;
+	
 	// position of surrogate FK in fields mapping (same as satRowMeta)
 	public int posFk = -1;
 	// position of FromDate attribute in fields mapping (same as satRowMeta)
@@ -140,6 +143,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 
 	private void initSatAttsRowIdx(LoadSatMeta meta) throws KettleStepException {
 		satAttsRowIdx = new int[meta.getFields().length];
+		int nbBinary = 0;
 		for (int i = 0; i < meta.getFields().length; i++) {
 			satAttsRowIdx[i] = outputRowMeta.indexOfValue(meta.getFields()[i]);
 			if (satAttsRowIdx[i] < 0) {
@@ -149,11 +153,31 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			}
 			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_FK)) {
 				posFkInRow = outputRowMeta.indexOfValue(meta.getFields()[i]);
-			}
-			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)) {
+			} else if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)) {
 				posFromDateInRow = outputRowMeta.indexOfValue(meta.getFields()[i]);
 			}
+			ValueMetaInterface val = outputRowMeta.getValueMeta(satAttsRowIdx[i]);
+			if (val.isStorageBinaryString()){
+				nbBinary++;
+			}
 		}
+		
+		if (nbBinary > 0){
+			fieldsInBinary = new int[nbBinary];
+			nbBinary = 0;
+			for (int i = 0; i < meta.getFields().length; i++) {
+				int ix = outputRowMeta.indexOfValue(meta.getFields()[i]);
+				ValueMetaInterface val = outputRowMeta.getValueMeta(ix);
+				if (val.isStorageBinaryString()){
+					val.setStorageType(ValueMetaInterface.STORAGE_TYPE_NORMAL);
+					fieldsInBinary[nbBinary] = ix;
+					nbBinary++;
+				}
+			}
+		}
+		log.logBasic("saaaaaaaaaaa fieldsBinary =" + Arrays.toString(fieldsInBinary));
+		
+		
 	}
 
 	public void emptyBuffersAndClearPrepStmts() {
@@ -531,6 +555,10 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 
 	public int[] getSatAttsRowIdx() {
 		return satAttsRowIdx;
+	}
+
+	public int[] getFieldsInBinary() {
+		return fieldsInBinary;
 	}
 
 	public NavigableSet<CompositeValues> getBufferSatHistRows() {

@@ -49,7 +49,6 @@ import plugin.mo.trans.steps.loadsat.LoadSatMeta;
  * 
  * @author mouellet
  * 
- *         TODO: - fix when input stream set with Lazy conversion !!!
  * 
  */
 public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
@@ -69,6 +68,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 	// position index of none-key fields in row stream (defined in UI)
 	private int[] nonekeysRowIdx;
+	
+	//position index of fields stored in BINARY in row stream (= null if none)
+	private int[] fieldsInBinary = null;
 
 	private RowMetaInterface lookupRowMeta;
 	private RowMetaInterface insertRowMeta;
@@ -98,7 +100,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	/*
 	 * Must be called prior to Prepared Stmt initialization and row processing
 	 */
-	public void initializeRowProcessing(BaseLoadMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {
+	public void initializeRowProcessing(BaseLoadMeta meta) throws KettleStepException {
 		if (bufferRows == null) {
 			bufferRows = new ArrayList<Object[]>(meta.getBufferSize() + 10);
 		}
@@ -106,7 +108,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			int capacity = (int) ((meta.getBufferSize()) / 0.75 + 1);
 			lookupMapping = new HashMap<CompositeValues, Long>(capacity);
 		}
-		initRowIdx(meta, inputRowMeta);
+		initRowIdx(meta);
 
 		// initialize all naming needing variable substitution (${var})
 		realSchemaName = meta.getDatabaseMeta().environmentSubstitute(meta.getSchemaName());
@@ -115,7 +117,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 	}
 
-	public Long getKeyfromMap(Object[] originalRow) {
+	public Long getKeyfromLookupMap(Object[] originalRow) {
 		CompositeValues n = new CompositeValues(originalRow, keysRowIdx);
 		return lookupMapping.get(n);
 	}
@@ -156,13 +158,10 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			}
 			for (int j = 0; j < keysRowIdx.length; j++) {
 				int pIdx = (i * keysRowIdx.length) + (j + 1);
-				// log.logBasic("Got here for j=" + j + " with keysIndex = " +
-				// keysRowIdx[j] + " with value= " + p[keysRowIdx[j]]+
-				// " deep array of row =" + Arrays.deepToString(p));
 				// IMPORTANT: rely on key params of lookupRowMeta located
 				// after TechKeyCol (hence j+1) with same order as in UI
-				db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(j + 1), (p == null) ? null : p[keysRowIdx[j]],
-						pIdx);
+				db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(j + 1), 
+						(p == null) ? null : p[keysRowIdx[j]],pIdx);
 			}
 		}
 
@@ -216,8 +215,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	/*
 	 * 
 	 */
-	public void initPrepStmtLookup(BaseLoadMeta meta, int bufferSize, RowMetaInterface inputRowMeta)
-			throws KettleDatabaseException {
+	public void initPrepStmtLookup(BaseLoadMeta meta, int bufferSize) throws KettleDatabaseException {
 
 		lookupRowMeta = new RowMeta();
 		lookupRowMeta.addValueMeta(new ValueMetaInteger(meta.getTechKeyCol()));
@@ -250,7 +248,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 					// add Meta of key(s) col
 					if (j == 0) {
 						nkcols.append(", ").append(db.getDatabaseMeta().quoteField(meta.getCols()[i]));
-						int tmpMetatype = inputRowMeta.getValueMeta(keysRowIdx[keyCounter]).getType();
+						int tmpMetatype = outputRowMeta.getValueMeta(keysRowIdx[keyCounter]).getType();
 						lookupRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], tmpMetatype));
 					}
 					keyCounter++;
@@ -277,8 +275,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
-	public void initPrepStmtInsert(BaseLoadMeta meta, RowMetaInterface inputRowMeta) 
-								throws KettleDatabaseException {
+	public void initPrepStmtInsert(BaseLoadMeta meta) throws KettleDatabaseException {
 
 		/*
 		 * This applied for both Hub and Link: Column ordering rule: 1- cols
@@ -310,7 +307,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 					sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 					sqlValues += ", ?";
 				}
-				int tmpMetatype = inputRowMeta.getValueMeta(keysRowIdx[keyCounter]).getType();
+				int tmpMetatype = outputRowMeta.getValueMeta(keysRowIdx[keyCounter]).getType();
 				insertRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], tmpMetatype));
 				keyCounter++;
 			}
@@ -325,7 +322,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 				sqlIns += ", " + db.getDatabaseMeta().quoteField(meta.getCols()[i]);
 				sqlValues += ", ?";
 
-				int tmpMetatype = inputRowMeta.getValueMeta(nonekeysRowIdx[nonekeyCounter]).getType();
+				int tmpMetatype = outputRowMeta.getValueMeta(nonekeysRowIdx[nonekeyCounter]).getType();
 				insertRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], tmpMetatype));
 				nonekeyCounter++;
 			}
@@ -379,59 +376,60 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
-	/*
-	 * //only used with method TABLEMAX //This should be called from a
-	 * synchronized block in the Step class public void initSelectMax(String
-	 * pKey, RowMetaInterface inputRowMeta, BaseStepMeta meta) throws
-	 * KettleDatabaseException {
-	 * 
-	 * // Method "Database.getOneRow(string sql)" is screwed up as it changes
-	 * the // metaRow instance variable in Database! This impacts later call
-	 * done on Database. // Use direct call to PrepareStmt & ResultSet instead
-	 * String sqlMax = "SELECT " + " MAX(" +
-	 * db.getDatabaseMeta().quoteField(pKey) + ") " + "FROM " + qualifiedTable;
-	 * Statement stmtMax = null; try { stmtMax =
-	 * db.getConnection().createStatement(); ResultSet maxrs =
-	 * stmtMax.executeQuery(sqlMax); if (maxrs.next()) { //return 0 when Null
-	 * curSeqKey = maxrs.getLong(1); log.logBasic("Query returned max key: " +
-	 * curSeqKey); } else { throw new
-	 * KettleDatabaseException("Unable to get max key from Query: " + sqlMax); }
-	 * if (stmtMax != null) stmtMax.close(); } catch (SQLException e) { throw
-	 * new KettleDatabaseException(e); } }
-	 */
 
-	private void initRowIdx(BaseLoadMeta meta, RowMetaInterface inputRowMeta) throws KettleStepException {
+	private void initRowIdx(BaseLoadMeta meta) throws KettleStepException {
 		int nbKey = 0;
 		int nbNoneKey = 0;
+		int nbBinary = 0;
 		for (int i = 0; i < meta.getTypes().length; i++) {
 			if (meta.getTypes()[i].equals(meta.getIdKeyTypeString())) {
 				nbKey++;
 			} else if (meta.getTypes()[i].equals(meta.getOtherTypeString())) {
 				nbNoneKey++;
 			}
+			
+			ValueMetaInterface vl = outputRowMeta.getValueMeta
+										(outputRowMeta.indexOfValue(meta.getFields()[i]));
+			if (vl.isStorageBinaryString()){
+				nbBinary++;
+			}
 		}
 
 		keysRowIdx = new int[nbKey];
 		nonekeysRowIdx = new int[nbNoneKey];
+		if (nbBinary > 0){
+			fieldsInBinary = new int[nbBinary];	
+		}
+		
 		nbKey = 0;
 		nbNoneKey = 0;
+		nbBinary = 0;
 		for (int i = 0; i < meta.getTypes().length; i++) {
 			if (meta.getTypes()[i].equals(meta.getIdKeyTypeString())) {
-				keysRowIdx[nbKey] = inputRowMeta.indexOfValue(meta.getFields()[i]);
+				keysRowIdx[nbKey] = outputRowMeta.indexOfValue(meta.getFields()[i]);
 				if (keysRowIdx[nbKey] < 0) {
 					throw new KettleStepException(BaseMessages.getString(PKG, "Load.Exception.FieldNotFound",
 							meta.getFields()[i]));
 				}
 				nbKey++;
 			} else if (meta.getTypes()[i].equals(meta.getOtherTypeString())) {
-				nonekeysRowIdx[nbNoneKey] = inputRowMeta.indexOfValue(meta.getFields()[i]);
+				nonekeysRowIdx[nbNoneKey] = outputRowMeta.indexOfValue(meta.getFields()[i]);
 				if (nonekeysRowIdx[nbNoneKey] < 0) {
 					throw new KettleStepException(BaseMessages.getString(PKG, "Load.Exception.FieldNotFound",
 							meta.getFields()[i]));
 				}
 				nbNoneKey++;
 			}
+			
+			ValueMetaInterface vl = outputRowMeta.getValueMeta
+										(outputRowMeta.indexOfValue(meta.getFields()[i]));
+			if (vl.isStorageBinaryString()){
+				vl.setStorageType(ValueMetaInterface.STORAGE_TYPE_NORMAL);
+				fieldsInBinary[nbBinary] = outputRowMeta.indexOfValue(meta.getFields()[i]);
+				nbBinary++;
+			}
 		}
+		log.logBasic("leeeeeeeeeeeeeeee fieldsBinary =" + Arrays.toString(fieldsInBinary));
 	}
 
 	public boolean addToBufferRows(Object[] r, int bufferSize) {
@@ -551,6 +549,10 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 	public int[] getKeysRowIdx() {
 		return keysRowIdx;
+	}
+
+	public int[] getFieldsInBinary() {
+		return fieldsInBinary;
 	}
 
 	public PreparedStatement getPrepStmtLookup() {

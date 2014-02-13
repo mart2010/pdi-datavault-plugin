@@ -22,6 +22,7 @@ import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -81,6 +82,15 @@ public class LoadSat extends BaseStep implements StepInterface {
 
 		// Add current row to Buffer 
 		if (originalRow != null) {
+			//proceed with fields conversion when stored in BINARY
+			if (data.getFieldsInBinary() != null){
+				for (int i=0; i < data.getFieldsInBinary().length; i++){
+					int fi = data.getFieldsInBinary()[i];
+					ValueMetaInterface valueMeta = getInputRowMeta().getValueMeta(fi);
+					originalRow[fi] = valueMeta.convertToNormalStorageType( originalRow[fi] );
+				}
+			}
+
 			bufferNotFull = data.addToBufferRows(originalRow, meta.getBufferSize());
 		}
 		// Done: no more rows to be expected...
@@ -246,10 +256,8 @@ public class LoadSat extends BaseStep implements StepInterface {
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {
 		//safer to clone rowMeta for passing downstream
 		data.outputRowMeta = getInputRowMeta().clone();
-	    //although no change we still call getFields (ref. "InsertUpdate" step)
-		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
 		
-		// Initialize the data state 
+		// Initialize data state 
 		data.initializeRowProcessing(meta);
 		// initialize all PreparedStmt
 		data.initPrepStmtLookup(meta);
@@ -257,6 +265,10 @@ public class LoadSat extends BaseStep implements StepInterface {
 		if (!meta.isToDateColumnUsed()) {
 			data.initPrepStmtUpdate(meta);
 		}
+
+		//Must be called after having completed any modification to data.outputRowMeta
+		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
+		
 	}
 
 	

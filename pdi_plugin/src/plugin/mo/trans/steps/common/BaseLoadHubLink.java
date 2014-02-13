@@ -15,6 +15,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -103,6 +104,16 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 
 		// Add current row appended with null field to Buffer
 		if (originalRow != null) {
+			//convert fields stored as BINARY (lazy conversion)
+			//conversion is done implicitly during setValue(), but converting
+			//in row stream avoid converting many times downstream
+			if (data.getFieldsInBinary() != null){
+				for (int i=0; i < data.getFieldsInBinary().length; i++){
+					int fi = data.getFieldsInBinary()[i];
+					ValueMetaInterface valueMeta = getInputRowMeta().getValueMeta(fi);
+					originalRow[fi] = valueMeta.convertToNormalStorageType( originalRow[fi] );
+				}
+			}
 			rowNullAppended = RowDataUtil.addValueData(originalRow, getInputRowMeta().size(), null);
 			bufferNotFull = data.addToBufferRows(rowNullAppended, meta.getBufferSize());
 		}
@@ -131,8 +142,8 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		/***** step-1 --> Query DB and fill LookupMap  ******/
 
 		int nbLookup = data.populateMap(data.getBufferRows(),meta.getBufferSize());
-		//log.logBasic("...lookup return no of ele:" + nbLookup);
 
+		
 		/***** step-2 --> Manage existing rec: add key field, send downstream & remove from buffer *****/
 		if (nbLookup > 0){
 			processBufferAndSendRows(getInputRowMeta().size());	
@@ -193,7 +204,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 			throw new IllegalStateException("Buffer should be empty, check program logic");
 		
 	
-		/***** step-6 --> Continue processing or Exit if no more rows expected *****/
+		/***** step-5 --> Continue processing or Exit if no more rows *****/
 		if (!data.finishedAllRows) {
 			return true;
 		} else {
@@ -209,7 +220,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		Iterator<Object[]> iter = data.getBufferRows().iterator();
 		while (iter.hasNext()) {
 			Object[] r = iter.next();
-			Long key = data.getKeyfromMap(r);
+			Long key = data.getKeyfromLookupMap(r);
 			if (key != null) {
 				r[newKeyPos] = key;
 				putRow(data.outputRowMeta, r);
@@ -221,17 +232,12 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 	
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {
 		data.outputRowMeta = getInputRowMeta().clone();
-		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
+		data.initializeRowProcessing((BaseLoadMeta) meta);
+		data.initPrepStmtLookup( (BaseLoadMeta) meta, meta.getBufferSize());
+		data.initPrepStmtInsert( (BaseLoadMeta) meta);
 
-		/* example of a custom code to leave subclass handles 
-		// Initialize the row indexes of keys and none-keys...
-		if (meta.getCols() == null || meta.getCols().length < 2) {
-			throw new KettleStepException(BaseMessages.getString(PKG, "LoadLinkMeta.CheckResult.KeyFieldsIssues"));
-		}
-		*/
-		data.initializeRowProcessing((BaseLoadMeta) meta, getInputRowMeta());
-		data.initPrepStmtLookup( (BaseLoadMeta) meta, meta.getBufferSize(), getInputRowMeta());
-		data.initPrepStmtInsert( (BaseLoadMeta) meta, getInputRowMeta());
+		//Must be called after having done any modification to data.outputRowMeta
+		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
 	}		
 		
 	
