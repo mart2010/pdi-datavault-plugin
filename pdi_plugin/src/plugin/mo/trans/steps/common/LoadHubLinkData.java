@@ -4,28 +4,22 @@ import java.sql.BatchUpdateException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
-import org.pentaho.di.compatibility.ValueInteger;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
-import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.row.value.ValueMetaBase;
 import org.pentaho.di.core.row.value.ValueMetaDate;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.row.value.ValueMetaString;
@@ -33,15 +27,6 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
-import org.pentaho.di.ui.spoon.trans.LogBrowser;
-
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorData;
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
-import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
-import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * 

@@ -16,9 +16,6 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
-import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
-
 /**
  * Contains attributes exchanged between UI and Meta common to Steps.
  * 

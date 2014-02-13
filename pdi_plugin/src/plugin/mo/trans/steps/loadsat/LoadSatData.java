@@ -4,18 +4,13 @@ import java.sql.BatchUpdateException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NavigableSet;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.pentaho.di.core.Const;
@@ -29,18 +24,13 @@ import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.row.value.ValueMetaBase;
 import org.pentaho.di.core.row.value.ValueMetaDate;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorData;
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
-import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
-import sun.security.action.GetLongAction;
 
 public class LoadSatData extends BaseStepData implements StepDataInterface {
 	private static Class<?> PKG = CompositeValues.class;

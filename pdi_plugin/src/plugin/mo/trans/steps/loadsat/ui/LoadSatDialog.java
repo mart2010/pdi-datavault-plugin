@@ -21,8 +21,6 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -45,18 +43,15 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.steps.combinationlookup.CombinationLookupMeta;
 import org.pentaho.di.ui.core.database.dialog.DatabaseExplorerDialog;
 import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
-import org.pentaho.di.ui.core.widget.ComboValuesSelectionListener;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 

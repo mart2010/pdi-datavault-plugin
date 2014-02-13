@@ -44,7 +44,6 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.steps.combinationlookup.CombinationLookupMeta;
 import org.pentaho.di.ui.core.database.dialog.DatabaseExplorerDialog;
 import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
@@ -54,11 +53,9 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 import plugin.mo.trans.steps.loadhub.LoadHubMeta;
-import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 
 /*
  * 

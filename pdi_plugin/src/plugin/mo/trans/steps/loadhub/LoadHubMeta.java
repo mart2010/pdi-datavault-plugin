@@ -1,13 +1,9 @@
 package plugin.mo.trans.steps.loadhub;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Shell;
-import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
-import org.pentaho.di.core.Const;
-import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -23,7 +19,6 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.shared.SharedObjectInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.step.StepInterface;
@@ -32,15 +27,10 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import plugin.mo.trans.steps.backup.loadanchor.LoadAnchorMeta;
-import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.common.CompositeValues;
 import plugin.mo.trans.steps.common.BaseLoadHubLink;
+import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.LoadHubLinkData;
 import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
-import plugin.mo.trans.steps.loadlink.ui.LoadLinkDialog;
-import plugin.mo.trans.steps.loadsat.LoadSatMeta;
-import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 
 /**
  * 

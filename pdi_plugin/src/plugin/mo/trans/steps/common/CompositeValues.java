@@ -1,10 +1,6 @@
 package plugin.mo.trans.steps.common;
 
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.Arrays;
-
-import javax.naming.ldap.HasControls;
 
 /**
  * A simple object composed of an arbitrary number of field value(s).  

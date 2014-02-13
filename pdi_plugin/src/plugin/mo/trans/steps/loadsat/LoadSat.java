@@ -1,27 +1,13 @@
 package plugin.mo.trans.steps.loadsat;
 
-import java.sql.BatchUpdateException;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
-import org.pentaho.di.core.exception.KettleDatabaseBatchException;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.core.row.RowDataUtil;
-import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;

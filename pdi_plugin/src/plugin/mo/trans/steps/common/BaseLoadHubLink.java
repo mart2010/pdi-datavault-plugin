@@ -1,20 +1,14 @@
 package plugin.mo.trans.steps.common;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
@@ -24,10 +18,6 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
-
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
-import plugin.mo.trans.steps.loadsat.LoadSatData;
-import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * This Step is designed for loading both Hub AND Link.
