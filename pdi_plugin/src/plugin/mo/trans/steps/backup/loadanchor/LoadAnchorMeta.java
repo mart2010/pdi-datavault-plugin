@@ -22,6 +22,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -57,8 +58,16 @@ import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
  * - 
  * 
  * eventually move to annotated (but now both do not mix well)
+ * 
+ * @Step(id = "HL7Input", )
+ * 
+ * 
+ * 
  * @Step(id="LoadHubAnchorPlugin",name="Hub/AnchorLoader",image="ui/images/DPL.png",
-		description="LoadHubMeta.TypeLongDesc.HubLoader",categoryDescription="Experimental")
+ *		description="LoadHubMeta.TypeLongDesc.HubLoader",categoryDescription="Experimental")
+ *	
+ *  
+ *	
  */
 public class LoadAnchorMeta extends BaseStepMeta implements StepMetaInterface {
 	private static Class<?> PKG = CompositeValues.class;

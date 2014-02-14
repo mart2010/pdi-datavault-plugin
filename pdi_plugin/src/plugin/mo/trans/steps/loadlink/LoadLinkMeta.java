@@ -21,6 +21,7 @@ import java.util.List;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -58,6 +59,9 @@ import plugin.mo.trans.steps.loadlink.ui.LoadLinkDialog;
  * @author mouellet
  *
  */
+@Step(id = "LoadLinkPlugin", name = "LoadLinkDialog.Shell.Title", description="LoadLinkDialog.Shell.Desc", 
+image = "link.png", i18nPackageName="plugin.mo.trans.steps.common", 
+categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
 public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 	public static String IDENTIFYING_KEY = "Relationship Key";
 	public static String OTHER_TYPE = "Other Attribute";

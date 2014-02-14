@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -51,11 +52,14 @@ import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 
-/*
+/**
  * 
  * TODO: 
  *
  */
+@Step(id = "LoadSatAttPlugin", name = "LoadSatDialog.Shell.Title", description="LoadSatDialog.Shell.Desc", 
+image = "sat.png", 	i18nPackageName="plugin.mo.trans.steps.common", 
+categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
 public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	private static Class<?> PKG = CompositeValues.class;
 		

@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -56,12 +57,14 @@ import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
  * @author mouellet
  *
  */
+@Step(id = "LoadHubAnchorPlugin", name = "LoadHubDialog.Shell.Title", description="LoadHubDialog.Shell.Desc", 
+		image = "hub.png", 	i18nPackageName="plugin.mo.trans.steps.common", 
+		categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
 public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 	public static String IDENTIFYING_KEY = "Business Key";
 	public static String OTHER_TYPE = "Other Attribute";
 	
-	
-	
+
 	public LoadHubMeta() {
 		super();
 	}
@@ -78,7 +81,6 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		return OTHER_TYPE;
 	}
 
-	
 	
 	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
