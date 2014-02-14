@@ -115,6 +115,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		realSchemaName = meta.getDatabaseMeta().environmentSubstitute(meta.getSchemaName());
 		String realtable = meta.getDatabaseMeta().environmentSubstitute(meta.getTargetTable());
 		qualifiedTable = meta.getDatabaseMeta().getQuotedSchemaTableCombination(realSchemaName, realtable);
+		if (!Const.isEmpty(meta.getAuditRecSourceCol())){
+			meta.setAuditRecSourceValue(meta.getDatabaseMeta().environmentSubstitute(meta.getAuditRecSourceValue()) );
+		}
 
 	}
 
@@ -148,10 +151,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		// clean-up previous map
 		lookupMapping.clear();
 
-		// Setting values for prepared Statement
 		for (int i = 0; i < nbParamsClause; i++) {
 			Object[] p;
-			// in case, we have less rows
+			// in case, we have less than buffer size
 			try {
 				p = rows.get(i);
 			} catch (IndexOutOfBoundsException e) {
@@ -159,7 +161,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			}
 			for (int j = 0; j < keysRowIdx.length; j++) {
 				int pIdx = (i * keysRowIdx.length) + (j + 1);
-				// IMPORTANT: rely on key params of lookupRowMeta located
+				// Rely on key params of lookupRowMeta positioned
 				// after TechKeyCol (hence j+1) with same order as in UI
 				db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(j + 1), 
 						(p == null) ? null : p[keysRowIdx[j]],pIdx);
@@ -176,8 +178,6 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 
 		for (Object[] r : getLookupRows(rs, keysRowIdx.length + 1, nbParamsClause)) {
-			// log.logBasic("just before getRows with object r:" +
-			// Arrays.deepToString(r));
 			CompositeValues v = new CompositeValues(r, 1, keysRowIdx.length);
 			lookupMapping.put(v, (Long) r[0]);
 		}

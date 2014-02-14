@@ -142,6 +142,9 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		realSchemaName = meta.getDatabaseMeta().environmentSubstitute(meta.getSchemaName());
 		String realtable = meta.getDatabaseMeta().environmentSubstitute(meta.getTargetTable());
 		qualifiedSatTable = meta.getDatabaseMeta().getQuotedSchemaTableCombination(realSchemaName, realtable);
+		if (!Const.isEmpty(meta.getAuditRecSourceCol())){
+			meta.setAuditRecSourceValue(meta.getDatabaseMeta().environmentSubstitute(meta.getAuditRecSourceValue()) );
+		}
 
 		initSatAttsRowIdx(meta);
 		minDateBuffer = Long.MAX_VALUE;
@@ -181,9 +184,6 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 				}
 			}
 		}
-		log.logBasic("saaaaaaaaaaa fieldsBinary =" + Arrays.toString(fieldsInBinary));
-		
-		
 	}
 
 	public void emptyBuffersAndClearPrepStmts() {
@@ -215,8 +215,9 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		 * 
 		 * Notes: 
 		 * 1) The second clause is simply ignored for non-temporal data.
-		 * 2) Rely on ANSI SQL DATE literal value using Gregorian calendar: DATE
-		 * 'YYYY-MM-DD' 3) All columns ([col1..]) ordering is based on the one
+		 * 2) Rely on ANSI SQL DATE literal value using Gregorian calendar: 
+		 *    "DATE 'YYYY-MM-DD'" 
+		 * 3) All columns ([col1..]) ordering is based on the one
 		 * defined in UI mapping
 		 * 
 		 * SELECT [col1], [col2] .. 
@@ -390,9 +391,10 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	}
 
 	public int populateLookupMap(LoadSatMeta meta, int nbParamsClause) throws KettleDatabaseException {
-		// Setting values for prepared Statement
+		
 		for (int i = 0; i < nbParamsClause; i++) {
 			Object[] r;
+			// in case, we have less than buffer size
 			try {
 				r = bufferRows.get(i);
 			} catch (IndexOutOfBoundsException e) {
@@ -403,8 +405,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 		// final parameters (minDate) to limit historical sat rows
 		if (posFromDate != -1) {
-			// TODO: check about using Date: if column has finer-grained
-			// Timestamp def?
+			// TODO: check about using Date: if column has finer-detailed (sql Timestamp def?)
 			java.util.Date minDate = new Date(minDateBuffer);
 			db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(posFromDate), minDate, nbParamsClause + 1);
 		}

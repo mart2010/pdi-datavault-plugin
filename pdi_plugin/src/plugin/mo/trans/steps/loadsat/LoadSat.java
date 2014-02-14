@@ -73,7 +73,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
 
-		// request new row (wait until available) & indicate busy!
+		// request and wait for new row & indicate busy!
 		Object[] originalRow = getRow();
 		boolean bufferNotFull = true;
 
@@ -104,7 +104,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 				setOutputDone();
 				return false;
 			}
-
 		}
 
 		// Not done, return to request more rows
@@ -114,7 +113,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 
 
 		/*****
-		 * From here: buffer is either full OR partially full but no more rows expected
+		 * From here: buffer is either full OR partially full with no more rows expected
 		 *****/
 		
 		/***** step-1 --> Query DB and fill bufferSatHistRows  ******/
@@ -124,10 +123,9 @@ public class LoadSat extends BaseStep implements StepInterface {
 			logDetailed("Buffer filled, number of fetched sat history records from DB= " + nb);	
 		}
 		
-		/***** step-2 --> Add new records in bufferSatHistRows, ignore & send downstream duplicates ******
-		 *******          This guarantees proper sorting needed for Idempotent & "toDate"          ******/
+		/***** step-2 --> Add new records into bufferSatHistRows, ignore/send downstream duplicates ******
+		 *******          (guarantees sorting needed for Idempotent & for updating "toDate")        ******/
 		
-		// using Iterator to remove safely unneeded rows
 		Iterator<Object[]> iter = data.getBufferRows().iterator();
 		while (iter.hasNext()) {
 			Object[] bufferRow = iter.next();
@@ -135,13 +133,12 @@ public class LoadSat extends BaseStep implements StepInterface {
 											data.posFkInRow,data.posFromDateInRow);
 			
 			if (!data.getBufferSatHistRows().add(newRow)){
-				//ignore duplicate (e.g. dups in stream, or immutable attr..)
+				//ignore duplicate (e.g. dups in-stream, immutable attr..)
 				putRow(data.outputRowMeta, bufferRow);
 				iter.remove();
-				//incrementLinesSkipped();
 			}
 		}
-		// Finished if all buffer rows are duplicates 
+		// Finished if all buffer rows were duplicates 
 		if (data.getBufferRows().size() == 0) {
 			data.emptyBuffersAndClearPrepStmts();
 			if (!data.finishedAllRows) {
@@ -171,7 +168,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 				//remove when previous is identical
 				if (prevRow != null && prevRow.equalsIgnoreFromDate(satRow)){
 					iterSat.remove();
-					//incrementLinesSkipped();
 				}
 			}
 		}
@@ -198,12 +194,11 @@ public class LoadSat extends BaseStep implements StepInterface {
 				if (meta.isToDateColumnUsed()){
 					optToDate = (nextRec == null) ? data.toDateMaxFlag : nextRec.getFromDateValue() ;	
 				}
-				//ready to batch the newRow
 				data.addBatchInsert(meta, rec.getValues(), optToDate);
 				insertCtn++;
 				incrementLinesOutput();
 			} else {
-			//for existing record followed by a new one, add param to update (when)
+			//for existing record now followed by a new one, add param to update (when)
 				if (meta.isToDateColumnUsed() && nextRec != null && !nextRec.isPersisted()){
 					updateParams.add(new Object[]{nextRec.getFromDateValue()
 							,rec.getPkeyValue()
@@ -219,7 +214,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 			//execute Batch insert for all new Rows
 			data.executeBatch(data.getPrepStmtInsertSat(),data.getInsertRowMeta(),insertCtn);
 			
-			//sat rows have "toDate" and require update
+			//sat rows have "toDate" and require updates
 			if (updateParams != null && updateParams.size() > 0 ){
 				for (Object[] p : updateParams){
 					data.addBatchUpdateStmt(p);
@@ -256,19 +251,15 @@ public class LoadSat extends BaseStep implements StepInterface {
 	
 	
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {
-		//safer to clone rowMeta for passing downstream
+		//safer to clone rowMeta although no change is done 
 		data.outputRowMeta = getInputRowMeta().clone();
-		
-		// Initialize data state 
+ 
 		data.initializeRowProcessing(meta);
-		// initialize all PreparedStmt
 		data.initPrepStmtLookup(meta);
 		data.initPrepStmtInsert(meta);
 		if (!meta.isToDateColumnUsed()) {
 			data.initPrepStmtUpdate(meta);
 		}
-
-		//Must be called after having completed any modification to data.outputRowMeta
 		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );
 		
 	}
@@ -297,7 +288,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				if (log.isDetailed()) {
 					logDetailed(BaseMessages.getString(PKG, "Load.Log.ConnectedToDB"));
 				}
-				//Commit is done explicitly
+				//Commit is taken care of explicitly 
 				data.db.setAutoCommit(false);
 
 				return true;
