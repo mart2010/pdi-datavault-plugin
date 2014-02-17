@@ -70,7 +70,7 @@ import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
  *	
  */
 public class LoadAnchorMeta extends BaseStepMeta implements StepMetaInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = LoadAnchor.class;
 	
 	public static int MAX_SUGG_BUFFER_SIZE = 5000;
 	public static int MIN_BUFFER_SIZE = 100;

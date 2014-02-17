@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2014 Martin Ouellet
- * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +10,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Copyright (c) 2014 Martin Ouellet
  *
  */
 package plugin.mo.trans.steps.common;
@@ -46,14 +46,15 @@ import org.pentaho.di.trans.step.StepDataInterface;
 
 /**
  * 
- * Data object usable for both Hub and Link
+ * Data object usable for both Hub and Link.  It encapsulates
+ * data/database logic that are shared between these two.
+ * 
  * 
  * @author mouellet
  * 
- * 
  */
 public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = BaseLoadMeta.class;
 
 	public Database db;
 	// to add an extra pkey for Hub or Link
@@ -279,16 +280,18 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	public void initPrepStmtInsert(BaseLoadMeta meta) throws KettleDatabaseException {
 
 		/*
-		 * This applied for both Hub and Link: Column ordering rule: 1- cols
-		 * composing natural/surr-key (same as for look-up) 2- other cols not
-		 * part of composite keys (optional) 3- technical audit columns 4-
-		 * technical Primary key (not applicable for AUTO-INCREMENT) INSERT INTO
-		 * table(key1, key2, .., nonekey1, nonekey2, sysAudits, .., PKey)
+		 * This applied for both Hub and Link: Column ordering rule: 
+		 * 1- cols composing natural/surr-key (same as for look-up) 
+		 * 2- other cols not part of composite keys (optional) 
+		 * 3- technical audit columns 
+		 * 4- technical Primary key (not applicable for AUTO-INCREMENT) 
+		 * 
+		 * INSERT INTO table(key1,..,nonekey1,..,sysAudits,..,PKey)
 		 * VALUES(?, ?, ? ..)
 		 * 
-		 * n.b. VALUES when used with Sequence: VALUES(?, ?, ? ..,
-		 * newVal.getValues()) ; TODO: this is supported by Oracle...check
-		 * others and see proper usage
+		 * n.b. VALUES when used with Sequence: VALUES( .., seq.nextVal())
+		 * This sequence syntax is DB specific
+		 * 
 		 */
 		
 		insertRowMeta = new RowMeta();

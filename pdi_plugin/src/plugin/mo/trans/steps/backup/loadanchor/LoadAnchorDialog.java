@@ -72,7 +72,7 @@ import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 import plugin.mo.trans.steps.common.CompositeValues;
 
 public class LoadAnchorDialog extends BaseStepDialog implements StepDialogInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = LoadAnchor.class;
 
 	private CCombo wConnection;
 

@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2014 Martin Ouellet
- * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +10,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Copyright (c) 2014 Martin Ouellet
  *
  */
 package plugin.mo.trans.steps.common;
@@ -21,7 +21,8 @@ import java.util.Arrays;
 /**
  * A simple object composed of an arbitrary number of field value(s).  
  * Designed to simplify equality comparison when used with 
- * a set of natural keys (key values), or used to simplify sorting/comparing satellite rows.
+ * a set of natural keys (key values), or used to simplify 
+ * sorting/comparing satellite rows.
  * 
  * By default, all values are used for Equality comparison (key values).
  * 
@@ -29,6 +30,8 @@ import java.util.Arrays;
  * and natural ordering :
  * 	1- surrKey 
  *  2- fromDate time point
+ * 
+ * @author mouellet
  * 
  */
 public class CompositeValues implements Comparable<CompositeValues>{

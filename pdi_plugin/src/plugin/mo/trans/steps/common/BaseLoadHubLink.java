@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2014 Martin Ouellet
- * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +10,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Copyright (c) 2014 Martin Ouellet
  *
  */
 package plugin.mo.trans.steps.common;
@@ -38,21 +38,9 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 /**
  * This base step is used for loading both Hub AND Link, and could be override in future
  * for more specialized functions.
- *  
- *  
- * TO BE RE-ANALYZED. 
  * 
- * <b>Notes on Concurrency :</b>
- * Concurrency is not managed by blocking operations with synchronization.  We rather left data flow and 
- * fail at DB level.....  
- * 
- * Operations like DB look-up must be done serially to avoid threads generating different tech keys 
- * on identical business keys ("missed" look-ups).
- * <p>
- * It turns out, these operations take the bulk of time and synchronizing them is equivalent to
- * running them serially, while adding in code complexity and increasing likelihood of dead-lock.
- * <p>
- * DB Round-trip IS the single operation having the largest impact (by any factor) on Step 
+ * <b>Notes on Batch:</b>
+ *  * DB Round-trip IS the single operation having the largest impact (by any factor) on Step 
  * total processing time. Design principle is aiming to mitigate by favoring "bulk" processing: 
  * <ul>
  * <li>1) batching JDBC insert/update 
@@ -60,22 +48,38 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * </ul>
  * <p>
  * This is controlled with the parameter "Buffer size" defined in UI.
- * <p><p>
- * <b>Notes on Batch:</b>
  * <p>
+ * 
  * Most JDBC support Batch mode, although some may just emulate its function. 
  * JDBC supporting batch:  Mysql 5.x+, PostgreSQL 8.x+,  Oracle 11.x+, DB2, SQL-server, even H2 and Derby.
  * (http://java-persistence-performance.blogspot.ch/2013/05/batch-writing-and-dynamic-vs.html)
  * 
  * Consequently better long term solution to code using Batch mode.
- *  
+ *   
+ * 
+ * <b>Notes on Concurrency :</b>
+ * Concurrency is not managed by blocking operations with synchronization.  Critical operations 
+ * that would require synchronization are:
+ * <ul>
+ * <li>1) DB look-up on key 
+ * <li>2) Insert new key on missed lookups    
+ * </ul>
+ * 
+ * These operations should be done serially to avoid threads generating different tech keys on 
+ * identical business keys ("missed" look-ups).  But these also take the bulk of time 
+ * and synchronizing them is equivalent to running them serially (while adding in code complexity 
+ * and increasing likelihood of dead-lock).
+ * 
+ * The strategy is then allow for multi-thread to generate different tech-keys and let data flow 
+ * fail at DB level.   TODO: this must be tested for Link/Hub, but should not be used for Satellite.
+ * <p>
  * 
  * 
  * @author mouellet
  *
  */
 public class BaseLoadHubLink extends BaseStep implements StepInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = BaseLoadMeta.class;
 	
 	protected LoadHubLinkData data;
 	protected BaseLoadMeta meta;
@@ -277,7 +281,7 @@ public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 
 	if (data.db != null) {
 		try {
-			//TODO: not sure whether I do error handling correctly here to have the getErrors() work as designed!! to validate and align 
+			//TODO: is this proper error handling.. to validate and align 
 			if (getErrors() == 0) {
 				data.db.commit();
 			} else {

@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2014 Martin Ouellet
- * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +10,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Copyright (c) 2014 Martin Ouellet
  *
  */
 package plugin.mo.trans.steps.common;
@@ -33,18 +33,20 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
 /**
- * Contains attributes exchanged between UI and Meta common to Steps.
+ * This meta base class contains attributes common to all Steps.
+ * 
  * 
  * Subclass must implement: clone(), loadXML(), check(), getStep(), 
- * getStepData(), getDialog(), complete the partial impl of reading/writing
- * and any override and specialized properties.
+ * getStepData(), getDialog(), and complete the partial implementation of
+ * reading/writing from/to meta-store. 
+ * 
+ * Subclass can also provide override and specialized attributes.
  * 
  * @author mouellet
  *
  */
 public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInterface {
-	//TODO: remove the ones in subclass
-	protected static Class<?> PKG = CompositeValues.class;
+	protected static Class<?> PKG = BaseLoadMeta.class;
 
 	public static int MAX_SUGG_BUFFER_SIZE = 5000;	
 	public static int MIN_BUFFER_SIZE = 50;

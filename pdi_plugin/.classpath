@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-7-openjdk-amd64"/>
+	<classpathentry exported="true" kind="lib" path="res"/>
 	<classpathentry kind="lib" path="libext/kettle-core-TRUNK-SNAPSHOT.jar" sourcepath="/pentaho-kettle-master/core/src"/>
 	<classpathentry kind="lib" path="libext/kettle-dbdialog-TRUNK-SNAPSHOT.jar" sourcepath="/pentaho-kettle-master/dbdialog/src"/>
 	<classpathentry kind="lib" path="libext/kettle-engine-TRUNK-SNAPSHOT.jar" sourcepath="/pentaho-kettle-master/engine/src"/>
@@ -13,5 +13,6 @@
 	<classpathentry kind="lib" path="libswt/swt.jar"/>
 	<classpathentry kind="lib" path="libext/metastore-TRUNK-SNAPSHOT.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -69,7 +69,7 @@ import plugin.mo.trans.steps.common.CompositeValues;
  *  
  */
 public class LoadAnchor extends BaseStep implements StepInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = LoadAnchor.class;
 
 	private LoadAnchorData data;
 	private LoadAnchorMeta meta;

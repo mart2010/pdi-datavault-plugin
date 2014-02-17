@@ -49,7 +49,7 @@ import plugin.mo.trans.steps.common.CompositeValues;
  * 
  */
 public class LoadAnchorData extends BaseStepData implements StepDataInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = LoadAnchor.class;
 	
 	// modified downstream rowMeta following "LoadHub" step
 	public RowMetaInterface outputRowMeta;

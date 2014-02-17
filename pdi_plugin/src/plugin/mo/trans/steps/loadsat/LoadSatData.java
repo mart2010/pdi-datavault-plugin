@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2014 Martin Ouellet
- * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +10,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Copyright (c) 2014 Martin Ouellet
  *
  */
 package plugin.mo.trans.steps.loadsat;
@@ -46,10 +46,18 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
+import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 
+/**
+ * 
+ * Data class encapsulating logic for data/database logic for Satellite.
+ * 
+ * @author mouellet
+ *
+ */
 public class LoadSatData extends BaseStepData implements StepDataInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = BaseLoadMeta.class;
 
 	public Database db;
 
@@ -405,7 +413,6 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 		// final parameters (minDate) to limit historical sat rows
 		if (posFromDate != -1) {
-			// TODO: check about using Date: if column has finer-detailed (sql Timestamp def?)
 			java.util.Date minDate = new Date(minDateBuffer);
 			db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(posFromDate), minDate, nbParamsClause + 1);
 		}

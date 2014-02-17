@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2014 Martin Ouellet
- * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +10,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Copyright (c) 2014 Martin Ouellet
  *
  */
 package plugin.mo.trans.steps.loadhub.ui;
@@ -73,16 +73,12 @@ import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 import plugin.mo.trans.steps.loadhub.LoadHubMeta;
 
-/*
+/**
  * 
- * Responsible for the creation/setup of all widgets. 
- * Dialog elements created in order of appearance on dialog (top to bottom) 
- * Each widget consists of 1- its label and 2- the entry widget itself
- * FormData objects define the anchor points of the widgets
- * 
+ * @author mouellet
  */
 public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = BaseLoadMeta.class;
 
 	private CCombo wConnection;
 

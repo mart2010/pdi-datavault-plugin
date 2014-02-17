@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2014 Martin Ouellet
- * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +10,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Copyright (c) 2014 Martin Ouellet
  *
  */
 package plugin.mo.trans.steps.loadsat;
@@ -34,6 +34,7 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
+import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
 
 /**
@@ -52,15 +53,13 @@ import plugin.mo.trans.steps.common.CompositeValues;
  * 		> must have an input field used as a 'ValidFrom' time point 
  *      > can either ignore identical consecutive records (Idempotent) or load them as-is
  * 5) Attribute/Satellite table can also include a closing 'toDate' expire column
- * 6)
  * 
- * -)* Support of Reference/Knot values not explicit, but possible by doing 
- * 	   a Lookup Step upstream and using ref/knot key in mapping
  *       
+ * @author mouellet
  * 
  */
 public class LoadSat extends BaseStep implements StepInterface {
-	private static Class<?> PKG = CompositeValues.class;
+	private static Class<?> PKG = BaseLoadMeta.class;
 	
 	private LoadSatData data;
 	private LoadSatMeta meta;
