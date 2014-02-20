@@ -347,6 +347,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.BufferSize") + Const.CR;
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 			remarks.add(cr);
+			
 		}
 
 	}	
