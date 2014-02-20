@@ -19,7 +19,9 @@ package plugin.mo.trans.steps.loadhub;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Shell;
+import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -48,6 +50,8 @@ import plugin.mo.trans.steps.common.BaseLoadHubLink;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.LoadHubLinkData;
 import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
+import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
+import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * 
@@ -149,7 +153,7 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			keyGeneration = XMLHandler.getTagValue(stepnode, "keyGeneration");
 			sequenceName = XMLHandler.getTagValue(stepnode, "sequenceName");
 		} catch (Exception e) {
-			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadLinkMeta.Exception.LoadStepInfo"), e);
+			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.LoadStepInfo"), e);
 		}
 	}
 
@@ -163,7 +167,7 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			sequenceName = rep.getStepAttributeString(id_step, "sequenceName");
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG,
-					"LoadLinkMeta.Exception.ErrorReadingLinkStepInfo"), e);
+					"LoadHubMeta.Exception.ErrorReadingHubStepInfo"), e);
 		}
 	}
 	
@@ -176,7 +180,7 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			rep.saveStepAttribute(id_transformation, id_step, "sequenceName", sequenceName);
 			
 		} catch (Exception e) {
-			throw new KettleException(BaseMessages.getString(PKG, "LoadLinkMeta.Exception.UnableToSaveLinkStepInfo")
+			throw new KettleException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.UnableToSaveHubStepInfo")
 					+ id_step, e);
 		}
 	}
@@ -186,8 +190,32 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info, VariableSpace space,
 			Repository repository, IMetaStore metaStore) {
 		super.check(remarks, transMeta, stepMeta, prev, input, output, info, space, repository, metaStore);
-		//TODO: see if we need to have specialized check here...
 		
+		CheckResult cr;
+		String error_message = "";
+
+		int keyfound = 0;
+		for (int i = 0; i < cols.length; i++) {
+			if (types[i].equals(LoadHubMeta.IDENTIFYING_KEY)) {
+				keyfound++;
+			} 
+		}
+		if (keyfound == 0) {
+			error_message += BaseMessages.getString(PKG,
+					"LoadHubMeta.CheckResult.KeyFieldsIssues",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+			remarks.add(cr);
+		}
+		if (keyGeneration != null) {
+				if (!(BaseLoadMeta.CREATION_METHOD_AUTOINC.equals(keyGeneration)
+						|| BaseLoadMeta.CREATION_METHOD_SEQUENCE.equals(keyGeneration) 
+						|| BaseLoadMeta.CREATION_METHOD_TABLEMAX.equals(keyGeneration))) {
+					error_message += BaseMessages.getString(PKG, "LoadMeta.CheckResult.ErrorSurrKeyCreation")
+							+ ": " + keyGeneration + "!";
+					cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+					remarks.add(cr);
+				}
+		}
 	}	
 	
 	

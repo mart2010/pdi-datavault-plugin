@@ -18,16 +18,24 @@ package plugin.mo.trans.steps.common;
 
 import java.util.List;
 
+import org.pentaho.di.core.CheckResult;
+import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleXMLException;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.shared.SharedObjectInterface;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
@@ -79,7 +87,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 		super();
 	}
 	
-	//Let subclass provides exact Col-type name used in UI
+	//for subclass to provide Col-type name used in UI
 	public abstract String getIdKeyTypeString();
 	public abstract String getOtherTypeString();
 	
@@ -217,8 +225,6 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	
-
-	
 	public DatabaseMeta[] getUsedDatabaseConnections() {
 		if (databaseMeta != null) {
 			return new DatabaseMeta[] { databaseMeta };
@@ -227,6 +233,124 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 		}
 	}
 
+	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
+			RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info, VariableSpace space,
+			Repository repository, IMetaStore metaStore) {
+		CheckResult cr;
+		String error_message = "";
+		
+		// See if we have input streams leading to this step
+		if (input.length > 0) {
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK, BaseMessages.getString(PKG,
+					"LoadDialog.CheckResult.ReceivingInfoFromOtherSteps"), stepMeta);
+			remarks.add(cr);
+		} else {
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, BaseMessages.getString(PKG,
+					"LoadDialog.CheckResult.NoInputReceived"), stepMeta);
+			remarks.add(cr);
+		}
+		
+		// Look up fields in the input stream <prev>
+		if (prev != null && prev.size() > 0) {
+			boolean first = true;
+			error_message = "";
+			boolean error_found = false;
+			for (int i = 0; i < fields.length; i++) {
+				ValueMetaInterface v = prev.searchValueMeta(fields[i]);
+				if (v == null) {
+					if (first) {
+						first = false;
+						error_message += BaseMessages.getString(PKG, "LoadDialog.CheckResult.MissingFields") + Const.CR;
+					}
+					error_found = true;
+					error_message += "\t\t" + fields[i] + Const.CR;
+				}
+			}
+			if (error_found) {
+				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+			} else {
+				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK, BaseMessages.getString(PKG,
+						"LoadDialog.CheckResult.AllFieldsFoundInInputStream"), stepMeta);
+			}
+			remarks.add(cr);
+		} else {
+			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.CouldNotReadFields")
+					+ Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+			remarks.add(cr);
+		}			
+
+		//DB check on target table and columns
+		if (databaseMeta == null) {
+			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.InvalidConnection") + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+			remarks.add(cr);
+		} else {
+			Database db = new Database(loggingObject, databaseMeta);
+			try {
+				db.connect();
+				if (!Const.isEmpty(targetTable)) {
+					boolean first = true;
+					boolean error_found = false;
+					
+					String schemaTargetTable = databaseMeta.getQuotedSchemaTableCombination(schemaName, targetTable);
+					RowMetaInterface targetRowMeta = db.getTableFields(schemaTargetTable);
+					error_message = "";
+					if (targetRowMeta != null){
+						for (int i = 0; i < cols.length; i++) {
+							String lucol = cols[i];
+							ValueMetaInterface v = targetRowMeta.searchValueMeta(lucol);
+							if (v == null) {
+								if (first) {
+									first = false;
+									error_message += BaseMessages.getString(PKG,
+											"LoadDialog.CheckResult.MissingCompareColumns") + Const.CR;
+								}
+								error_found = true;
+								error_message += "\t\t" + lucol + Const.CR;
+							}
+						}
+						if (error_found) {
+							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+						} else {
+							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK, BaseMessages.getString(PKG,
+									"LoadMeta.CheckResult.AllFieldsFound"), stepMeta);
+						}
+						remarks.add(cr);
+						
+						if (!Const.isEmpty(techKeyCol)){
+							if (targetRowMeta.searchValueMeta(techKeyCol) == null) {
+								error_message = BaseMessages.getString(PKG,
+										"LoadMeta.CheckResult.SurrogateKeyNotFound") + Const.CR;
+								cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+								remarks.add(cr);
+							}
+						}
+						
+					} else {
+						error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.CouldNotReadTableInfo");
+						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+						remarks.add(cr);
+					}
+				}
+			} catch (KettleException e) {
+				error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.ErrorOccurred") + e.getMessage();
+				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+				remarks.add(cr);
+			} finally {
+				db.disconnect();
+			}
+			
+		}
+		
+		if (bufferSize > BaseLoadMeta.MAX_SUGG_BUFFER_SIZE){
+			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.BufferSize") + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
+			remarks.add(cr);
+		}
+
+	}	
+	
 	/*
 	 * TODO: verify if we need overriding equals() 
 	 * most Steps do not do this!

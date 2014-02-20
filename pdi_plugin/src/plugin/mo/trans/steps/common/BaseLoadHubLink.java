@@ -40,8 +40,8 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * for more specialized functions.
  * 
  * <b>Notes on Batch:</b>
- *  * DB Round-trip IS the single operation having the largest impact (by any factor) on Step 
- * total processing time. Design principle is aiming to mitigate by favoring "bulk" processing: 
+ *  DB round-trips have, by far, the largest impact on transformation processing time. 
+ *  Design principle is aiming to mitigate these by favoring "bulk" processing: 
  * <ul>
  * <li>1) batching JDBC insert/update 
  * <li>2) look-up Query done on a number of business keys at once    
@@ -54,12 +54,12 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * JDBC supporting batch:  Mysql 5.x+, PostgreSQL 8.x+,  Oracle 11.x+, DB2, SQL-server, even H2 and Derby.
  * (http://java-persistence-performance.blogspot.ch/2013/05/batch-writing-and-dynamic-vs.html)
  * 
- * Consequently better long term solution to code using Batch mode.
+ * Consequently it is a better long term solution to rely on Batch mode.
  *   
  * 
  * <b>Notes on Concurrency :</b>
- * Concurrency is not managed by blocking operations with synchronization.  Critical operations 
- * that would require synchronization are:
+ * Concurrency is normally managed by blocking operations with synchronization.  
+ * Critical operations in Load Hub/Link that require synchronization are:
  * <ul>
  * <li>1) DB look-up on key 
  * <li>2) Insert new key on missed lookups    
@@ -70,8 +70,12 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * and synchronizing them is equivalent to running them serially (while adding in code complexity 
  * and increasing likelihood of dead-lock).
  * 
- * The strategy is then allow for multi-thread to generate different tech-keys and let data flow 
- * fail at DB level.   TODO: this must be tested for Link/Hub, but should not be used for Satellite.
+ * The strategy is then to favor batch over multi-threading.  It may be possible to launch many Steps 
+ * concurrently (multi-threaded) which works fine in scenario 1, but not 2, so care must be taken:
+ * 1) at time of lookup, business key did not exist, but duplicate will be ignored during "insert" 
+ *    when the other thread had time to commit same key.
+ * 2) when two or more threads were able to insert same keys, then commit will fail and the entire 
+ *    transformation is invalid.  
  * <p>
  * 
  * 

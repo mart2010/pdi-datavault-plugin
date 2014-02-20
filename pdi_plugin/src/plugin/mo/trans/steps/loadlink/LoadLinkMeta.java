@@ -21,6 +21,7 @@ import java.util.List;
 import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -50,6 +51,7 @@ import plugin.mo.trans.steps.common.BaseLoadHubLink;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.LoadHubLinkData;
 import plugin.mo.trans.steps.loadlink.ui.LoadLinkDialog;
+import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * Meta class used for Link.
@@ -182,56 +184,36 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
 			RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info, VariableSpace space,
 			Repository repository, IMetaStore metaStore) {
+		super.check(remarks, transMeta, stepMeta, prev, input, output, info, space, repository, metaStore);
+		
 		CheckResult cr;
 		String error_message = "";
 
-		if (databaseMeta != null) {
-			Database db = new Database(loggingObject, databaseMeta);
-			try {
-				db.connect();
-/*
-				if (!Const.isEmpty(linkTable)) {
-					boolean first = true;
-					boolean error_found = false;
-					
-					String schemaLinkTable = databaseMeta.getQuotedSchemaTableCombination(schemaName, linkTable);
-					RowMetaInterface linkRowMeta = db.getTableFields(schemaLinkTable);
-					//to complete ...
-					
-				}
-				
-				//....
-				/* to add to check :
-				if (keyCols == null || keyCols.length < 2) {
-					throw new KettleStepException(BaseMessages.getString(PKG, "LoadLinkMeta.CheckResult.KeyFieldsIssues"));
-				}
+		int fkfound = 0;
+		for (int i = 0; i < cols.length; i++) {
+			if (types[i].equals(LoadLinkMeta.IDENTIFYING_KEY)) {
+				fkfound++;
+			} 
+		}
 
-				if (keyCreation != null) {
-					if (!(LoadHubMeta.CREATION_METHOD_AUTOINC.equals(keyCreation)
-							|| LoadHubMeta.CREATION_METHOD_SEQUENCE.equals(keyCreation) || LoadHubMeta.CREATION_METHOD_TABLEMAX
-								.equals(keyCreation))) {
-						error_message += BaseMessages.getString(PKG, "LoadHubMeta.CheckResult.ErrorSurrKeyCreation")
-								+ ": " + keyCreation + "!";
-						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-						remarks.add(cr);
-					}
-				}
-				*/
-				
-				
-			}  catch (KettleException e) {
-				error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.ErrorOccurred") + e.getMessage();
-				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-				remarks.add(cr);
-			} finally {
-				db.disconnect();
-			}
-			
-		} else {
-			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.InvalidConnection");
+		if (fkfound < 2) {
+			error_message += BaseMessages.getString(PKG,
+					"LoadLinkMeta.CheckResult.KeyFieldsIssues",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 			remarks.add(cr);
 		}
+		
+		if (keyGeneration != null) {
+				if (!(BaseLoadMeta.CREATION_METHOD_AUTOINC.equals(keyGeneration)
+						|| BaseLoadMeta.CREATION_METHOD_SEQUENCE.equals(keyGeneration) 
+						|| BaseLoadMeta.CREATION_METHOD_TABLEMAX.equals(keyGeneration))) {
+					error_message += BaseMessages.getString(PKG, "LoadMeta.CheckResult.ErrorSurrKeyCreation")
+							+ ": " + keyGeneration + "!";
+					cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+					remarks.add(cr);
+				}
+		}
+ 
 	}	
 	
 	

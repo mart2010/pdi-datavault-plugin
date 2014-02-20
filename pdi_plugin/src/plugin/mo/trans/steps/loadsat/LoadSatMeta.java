@@ -215,169 +215,75 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
 			RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info, VariableSpace space,
 			Repository repository, IMetaStore metaStore) {
+		super.check(remarks, transMeta, stepMeta, prev, input, output, info, space, repository, metaStore);
+
 		CheckResult cr;
 		String error_message = "";
 
-		if (databaseMeta != null) {
-			Database db = new Database(loggingObject, databaseMeta);
-			try {
-				db.connect();
-
-				if (!Const.isEmpty(targetTable)) {
-					boolean first = true;
-					boolean error_found = false;
-					
-					String schemaSatTable = databaseMeta.getQuotedSchemaTableCombination(schemaName, targetTable);
-					RowMetaInterface satRowMeta = db.getTableFields(schemaSatTable);
-					
-					int fkfound = 0;
-					int temporalfound = 0;
-					int normalfound = 0;
-					int unknownfound = 0;
-					
-					if (satRowMeta != null) {
-						for (int i = 0; i < cols.length; i++) {
-							String lufield = cols[i];
-							if (types[i].equals(LoadSatMeta.ATTRIBUTE_FK)) {
-								fkfound++;
-							} else if (types[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)){
-								temporalfound++;
-							} else if (types[i].equals(LoadSatMeta.ATTRIBUTE_NORMAL)){
-								normalfound++;
-							} else {
-								unknownfound++;
-							}
-							ValueMetaInterface v = satRowMeta.searchValueMeta(lufield);
-							if (v == null) {
-								if (first) {
-									first = false;
-									error_message += BaseMessages.getString(PKG,
-											"LoadDialog.CheckResult.MissingCompareColumns") + Const.CR;
-								}
-								error_found = true;
-								error_message += "\t\t" + lufield + Const.CR;
-							}
-						}
-						
-						if (error_found) {
-							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-						} else {
-							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK, BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.AllFieldsFound"), stepMeta);
-						}
-						remarks.add(cr);
-
-						if (fkfound == 0){
-							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.NoFKFieldsFound",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
-							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-							remarks.add(cr);
-						} else if (fkfound > 1) {
-							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.ManyFKFieldsFound",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
-							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
-							remarks.add(cr);
-						}
-						
-						if (temporalfound > 0) {
-							if (temporalfound > 1) {
-								error_message += BaseMessages.getString(PKG,
-										"LoadSatMeta.CheckResult.ManyTempoFieldsFound",LoadSatMeta.ATTRIBUTE_TEMPORAL) + Const.CR;
-								cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
-								remarks.add(cr);
-							}
-							if (!Const.isEmpty(toDateColumn) ){
-								SimpleDateFormat f = new SimpleDateFormat(LoadSatMeta.DATE_FORMAT);
-								try {
-									f.parse(toDateMaxFlag);
-								} catch (ParseException e) {
-									error_message += BaseMessages.getString(PKG,
-											"LoadSatMeta.CheckResult.WrongDateFormat") + Const.CR;
-									cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-									remarks.add(cr);
-								}
-							}
-						}
-						if (normalfound == 0) {
-							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.NoNormalFieldFound") + Const.CR;
-							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
-							remarks.add(cr);
-						}
-						if (unknownfound > 0) {
-							error_message += BaseMessages.getString(PKG,
-									"LoadSatMeta.CheckResult.UnknownFieldFound") + Const.CR;
-							cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
-							remarks.add(cr);
-						}
-					} else {
-						error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.CouldNotReadTableInfo");
-						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-						remarks.add(cr);
-					}
-				}
-				
-				if (bufferSize > BaseLoadMeta.MAX_SUGG_BUFFER_SIZE){
-					error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.BufferSize") + Const.CR;
-					cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
-					remarks.add(cr);
-				}
-				
-				// Look up fields in the input stream <prev>
-				if (prev != null && prev.size() > 0) {
-					boolean first = true;
-					error_message = "";
-					boolean error_found = false;
-
-					for (int i = 0; i < fields.length; i++) {
-						ValueMetaInterface v = prev.searchValueMeta(fields[i]);
-						if (v == null) {
-							if (first) {
-								first = false;
-								error_message += BaseMessages.getString(PKG, "LoadDialog.CheckResult.MissingFields")
-										+ Const.CR;
-							}
-							error_found = true;
-							error_message += "\t\t" + fields[i] + Const.CR;
-						}
-					}
-					if (error_found) {
-						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-					} else {
-						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK, BaseMessages.getString(PKG,
-								"LoadDialog.CheckResult.AllFieldsFoundInInputStream"), stepMeta);
-					}
-					remarks.add(cr);
-				} else {
-					error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.CouldNotReadFields")
-							+ Const.CR;
-					cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-					remarks.add(cr);
-				}			
-			} catch (KettleException e) {
-				error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.ErrorOccurred") + e.getMessage();
-				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-				remarks.add(cr);
-			} finally {
-				db.disconnect();
+		int fkfound = 0;
+		int temporalfound = 0;
+		int normalfound = 0;
+		int unknownfound = 0;
+	
+		for (int i = 0; i < cols.length; i++) {
+			if (types[i].equals(LoadSatMeta.ATTRIBUTE_FK)) {
+				fkfound++;
+			} else if (types[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)){
+				temporalfound++;
+			} else if (types[i].equals(LoadSatMeta.ATTRIBUTE_NORMAL)){
+				normalfound++;
+			} else {
+				unknownfound++;
 			}
-		} else {
-			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.InvalidConnection");
+		}
+	
+		if (fkfound == 0){
+			error_message += BaseMessages.getString(PKG,
+					"LoadSatMeta.CheckResult.NoFKFieldsFound",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 			remarks.add(cr);
-		}
-
-		// See if we have input streams leading to this step
-		if (input.length > 0) {
-			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK, BaseMessages.getString(PKG,
-					"LoadDialog.CheckResult.ReceivingInfoFromOtherSteps"), stepMeta);
-			remarks.add(cr);
-		} else {
-			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, BaseMessages.getString(PKG,
-					"LoadDialog.CheckResult.NoInputReceived"), stepMeta);
+		} else if (fkfound > 1) {
+			error_message += BaseMessages.getString(PKG,
+					"LoadSatMeta.CheckResult.ManyFKFieldsFound",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 			remarks.add(cr);
 		}
+		
+		if (temporalfound > 0) {
+			if (temporalfound > 1) {
+				error_message += BaseMessages.getString(PKG,
+						"LoadSatMeta.CheckResult.ManyTempoFieldsFound",LoadSatMeta.ATTRIBUTE_TEMPORAL) + Const.CR;
+				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
+				remarks.add(cr);
+			}
+			if (!Const.isEmpty(toDateColumn) ){
+				SimpleDateFormat f = new SimpleDateFormat(LoadSatMeta.DATE_FORMAT);
+				try {
+					f.parse(toDateMaxFlag);
+				} catch (ParseException e) {
+					error_message += BaseMessages.getString(PKG,
+							"LoadSatMeta.CheckResult.WrongDateFormat") + Const.CR;
+					cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+					remarks.add(cr);
+				}
+			}
+		}
+		if (normalfound == 0) {
+			error_message += BaseMessages.getString(PKG,
+					"LoadSatMeta.CheckResult.NoNormalFieldFound") + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
+			remarks.add(cr);
+		}
+		if (unknownfound > 0) {
+			error_message += BaseMessages.getString(PKG,
+					"LoadSatMeta.CheckResult.UnknownFieldFound") + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
+			remarks.add(cr);
+		}
+					
 	}
+				
+	
 
 	
 	//not used with LoadLinkMeta

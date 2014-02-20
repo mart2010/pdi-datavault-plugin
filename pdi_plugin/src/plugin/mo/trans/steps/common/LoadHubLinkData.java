@@ -530,7 +530,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	}
 
 	/*
-	 * Useful to get load DTS values fixed or refresh according to own needs
+	 * Get the loading DTS fix by load or refresh for each record
 	 */
 	public Date getNowDate(boolean refresh) {
 		if (nowDate == null || refresh) {
