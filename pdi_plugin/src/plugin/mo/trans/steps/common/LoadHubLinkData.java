@@ -433,7 +433,6 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 				nbBinary++;
 			}
 		}
-		log.logBasic("leeeeeeeeeeeeeeee fieldsBinary =" + Arrays.toString(fieldsInBinary));
 	}
 
 	public boolean addToBufferRows(Object[] r, int bufferSize) {

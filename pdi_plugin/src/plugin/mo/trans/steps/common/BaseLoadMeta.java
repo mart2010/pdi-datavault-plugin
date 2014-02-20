@@ -317,7 +317,6 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 									"LoadMeta.CheckResult.AllFieldsFound"), stepMeta);
 						}
 						remarks.add(cr);
-						
 						if (!Const.isEmpty(techKeyCol)){
 							if (targetRowMeta.searchValueMeta(techKeyCol) == null) {
 								error_message = BaseMessages.getString(PKG,
@@ -326,7 +325,6 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 								remarks.add(cr);
 							}
 						}
-						
 					} else {
 						error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.CouldNotReadTableInfo");
 						cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
@@ -347,7 +345,6 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 			error_message = BaseMessages.getString(PKG, "LoadDialog.CheckResult.BufferSize") + Const.CR;
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 			remarks.add(cr);
-			
 		}
 
 	}	
