@@ -502,26 +502,23 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		int[] nbIns = null;
 		try {
 			nbIns = prepStmtInsert.executeBatch();
+			//commit ASAP for other threads to get the chance to see new keys 
+			db.commit();
 			prepStmtInsert.clearBatch();
 			if (log.isDebug()) {
 				log.logDebug("Successfully executed insert batch");
 			}
 		} catch (BatchUpdateException ex) {
-			if (nbIns == null) {
-				nbIns = ex.getUpdateCounts();
-			}
+			nbIns = (nbIns == null)? ex.getUpdateCounts() : nbIns;
 			if (insertCtnExpected == nbIns.length) {
 				log.logError("BatchUpdateException raised but JDBC driver continued processing rows", ex);
-				// Continue processing. Possible causes:
-				// For Hub: business key(s) already exist (this is checked
-				// further)
-				// Link: either violation of FKs unique constraint (if
-				// confirmed, ignore) or FK referential integrity (then fail
-				// process...)
-				// To be confirmed by calling processRow()
+				db.commit();
+				// Continue processing as we treat possible issues:
+				// Hub: business key(s) already loaded (to be confirmed later)
+				// Link: either -violation of FKs unique constraint (same issue as Hub) 
+				//              -or FK referential integrity (then fail process...)
 			} else {
-				log.logError("BatchUpdateException raised and NOT all rows processed", ex);
-				throw new KettleDatabaseException(ex);
+				throw new KettleDatabaseException("BatchUpdateException raised and NOT all rows processed",ex);
 			}
 		} catch (SQLException ex) {
 			throw new KettleDatabaseException(ex);

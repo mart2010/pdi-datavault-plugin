@@ -150,7 +150,6 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 			logDetailed("Buffer filled, number of fetched hub records from DB= " + nbLookup);	
 		}
 
-		
 		/***** step-2 --> Manage existing: append key, send downstream & remove from buffer *****/
 		if (nbLookup > 0){
 			processBufferAndSendRows(getInputRowMeta().size());	
@@ -181,18 +180,15 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 				newKey = data.db.getNextValue( getTrans().getCounters(), meta.getSchemaName(),
 						 		meta.getTargetTable(), meta.getTechKeyCol());
 			} 
-			
 			data.addBatchInsert(meta, newRow, newKey);
 			incrementLinesOutput();
 			queryParams.add(newRow);
 		}
 		
- 
-		
 		/***** step-4 --> Execute batch, fill Map with new keys, validate and if OK: commit ******/
-		//TODO: verify that with this CHECK we are good for MULTI-THREADED SUPPORT!?
 		data.executeBatchInsert(meta, queryParams.size());
-		
+
+		//TODO: verify that with this CHECK we are good for MULTI-THREADED SUPPORT!?
 		int rowsAdded = data.populateMap(queryParams,meta.getBufferSize());		
 		if (rowsAdded != queryParams.size()){
 			data.db.rollback();
@@ -201,9 +197,8 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		}
 		//process remaining of Buffer with new Mapping
 		processBufferAndSendRows(getInputRowMeta().size());
-		//At this point all is safe, we commit
-		data.db.commit();
 
+		//At this point all rows should be treated, check for programming logic fault
 		if (data.getBufferRows().size() > 0 )
 			throw new IllegalStateException("Buffer should be empty, check program logic");
 		
