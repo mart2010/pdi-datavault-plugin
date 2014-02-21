@@ -188,7 +188,6 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 		/***** step-4 --> Execute batch, fill Map with new keys, validate and if OK: commit ******/
 		data.executeBatchInsert(meta, queryParams.size());
 
-		//TODO: verify that with this CHECK we are good for MULTI-THREADED SUPPORT!?
 		int rowsAdded = data.populateMap(queryParams,meta.getBufferSize());		
 		if (rowsAdded != queryParams.size()){
 			data.db.rollback();

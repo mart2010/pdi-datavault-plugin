@@ -189,6 +189,13 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 		CheckResult cr;
 		String error_message = "";
 
+		if (Const.isEmpty(techKeyCol)){
+			error_message = BaseMessages.getString(PKG,
+					"LoadMeta.CheckResult.SurrogateKeyNotFound") + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+			remarks.add(cr);
+		}
+
 		int fkfound = 0;
 		for (int i = 0; i < cols.length; i++) {
 			if (types[i].equals(LoadLinkMeta.IDENTIFYING_KEY)) {
@@ -197,7 +204,7 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 		}
 
 		if (fkfound < 2) {
-			error_message += BaseMessages.getString(PKG,
+			error_message = BaseMessages.getString(PKG,
 					"LoadLinkMeta.CheckResult.KeyFieldsIssues",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 			remarks.add(cr);

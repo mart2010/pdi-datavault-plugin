@@ -498,6 +498,9 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
+	// should cover same key inserted and comitted by a diff thread 
+	// i.e. key was not committed when this thread first populated its map (Phantom read)
+	// however, issue remains where both threads inserted same key and will fail here at commit!! 
 	public void executeBatchInsert(BaseStepMeta meta, int insertCtnExpected) throws KettleDatabaseException {
 		int[] nbIns = null;
 		try {

@@ -194,6 +194,13 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		CheckResult cr;
 		String error_message = "";
 
+		if (Const.isEmpty(techKeyCol)){
+			error_message = BaseMessages.getString(PKG,
+					"LoadMeta.CheckResult.SurrogateKeyNotFound") + Const.CR;
+			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
+			remarks.add(cr);
+		}
+		
 		int keyfound = 0;
 		for (int i = 0; i < cols.length; i++) {
 			if (types[i].equals(LoadHubMeta.IDENTIFYING_KEY)) {
