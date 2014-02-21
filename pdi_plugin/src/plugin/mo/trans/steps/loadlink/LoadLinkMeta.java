@@ -103,10 +103,10 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 		super.setDefault();
 		int nrkeys = 2;
 		allocateKeyArray(nrkeys);
-		for (int i = 1; i < nrkeys; i++) {
-			fields[i-1] = "key field-" + i;
-			cols[i-1] = "key column-" + i;
-			types[i-1] = IDENTIFYING_KEY;
+		for (int i = 0; i < nrkeys; i++) {
+			fields[i] = "key field-" + (i+1);
+			cols[i] = "key column-" + (i+1);
+			types[i] = IDENTIFYING_KEY;
 		}
 	}
 

@@ -105,13 +105,10 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 	@Override
 	public void setDefault() {
 		super.setDefault();
-		int nrkeys = 2;
-		allocateKeyArray(nrkeys);
-		for (int i = 1; i < nrkeys; i++) {
-			fields[i-1] = "key field-" + i;
-			cols[i-1] = "key column-" + i;
-			types[i-1] = IDENTIFYING_KEY;
-		}
+		allocateKeyArray(1);
+		fields[0] = "key field-1";
+		cols[0] = "key column-1";
+		types[0] = IDENTIFYING_KEY;
 	}
 
 	
