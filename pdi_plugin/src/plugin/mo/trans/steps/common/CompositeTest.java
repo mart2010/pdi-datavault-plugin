@@ -80,7 +80,7 @@ public class CompositeTest {
 
 	@Test
 	public void testDateValues() {
-		//TODO:  check WTF about these Dates......!!!!!
+		//TODO:  check about these Dates......!!!!!
 		//IMPORTANT: it seems even if these do not come from same base class, they are equivalent!!! 
 		CompositeValues c1 = new CompositeValues(new Object[] {"v1",new Date(10)});
 		CompositeValues c2 = new CompositeValues(new Object[] {"v1",new Timestamp(10)});	
