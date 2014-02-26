@@ -520,9 +520,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 				log.logDebug("Successfully executed insert batch");
 			}
 		} catch (BatchUpdateException ex) {
-			if (nb == null) {
-				nb = ex.getUpdateCounts();
-			}
+			nb = ex.getUpdateCounts();
 
 			if (updateExpected == nb.length) {
 				// jdbc driver continued processing all rows
@@ -535,15 +533,15 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 					// return;
 				 */
 			} else {
-	            //TODO: relalign with load-hub..
+	            //TODO: realign with load-hub..
 				KettleDatabaseBatchException kdbe = new KettleDatabaseBatchException( "Batch Exception and not all rows processed", ex );
 	            kdbe.setUpdateCounts( nb );
 	            List<Exception> exceptions = new ArrayList<Exception>();
-
 	            // 'seed' the loop with the root exception
 	            SQLException nextException = ex;
 	            do {
 	              exceptions.add( nextException );
+	              log.logError("Seeding batch nested Exception :", ex);
 	              // while current exception has next exception, add to list
 	            } while ( ( nextException = nextException.getNextException() ) != null );
 	            kdbe.setExceptionsList( exceptions );
