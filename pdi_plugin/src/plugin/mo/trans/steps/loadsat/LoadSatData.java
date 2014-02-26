@@ -32,6 +32,7 @@ import java.util.TreeSet;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleDatabaseBatchException;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -513,6 +514,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		int[] nb = null;
 		try {
 			nb = stmt.executeBatch();
+			//TODO: align with load-hub with early commit : db.commit();
 			stmt.clearBatch();
 			if (log.isDebug()) {
 				log.logDebug("Successfully executed insert batch");
@@ -524,22 +526,31 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 
 			if (updateExpected == nb.length) {
 				// jdbc driver continued processing all rows
-				log.logError("Batch Exception but JDBC driver processed all rows");
+				log.logError("Batch Exception but JDBC driver processed all rows", ex);
+
+				/* to review and align with load-hub/link
 				if (!Const.isEmpty(db.getConnectionGroup())) {
 					// logError("Ignore when running in parrallel -unique constraint violation expected");
 					throw new KettleDatabaseException(ex);
 					// return;
-				} else {
-					// logError("Continue processing, but check database integrity");
-					throw new KettleDatabaseException(ex);
-					// return;
-				}
+				 */
 			} else {
-				log.logError("Batch Exception and not all rows prcessed", ex);
-				throw new KettleDatabaseException(ex);
+	            //TODO: relalign with load-hub..
+				KettleDatabaseBatchException kdbe = new KettleDatabaseBatchException( "Batch Exception and not all rows processed", ex );
+	            kdbe.setUpdateCounts( nb );
+	            List<Exception> exceptions = new ArrayList<Exception>();
+
+	            // 'seed' the loop with the root exception
+	            SQLException nextException = ex;
+	            do {
+	              exceptions.add( nextException );
+	              // while current exception has next exception, add to list
+	            } while ( ( nextException = nextException.getNextException() ) != null );
+	            kdbe.setExceptionsList( exceptions );
+	            throw kdbe;
 			}
 		} catch (SQLException ex) {
-			throw new KettleDatabaseException("Unexpected error with batch", ex);
+			throw new KettleDatabaseException("Unexpected error during batch", ex);
 		}
 	}
 

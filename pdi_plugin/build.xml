@@ -13,8 +13,7 @@
 	<jar destfile="lib/${plugin.name}/${plugin.name}.jar"
 	     basedir="bin"
 		 excludes="**/*Test.class,plugin/mo/trans/steps/backup/**/*.class"
-		 update="true"
-	/>
+		 update="true"/>
 	</target>
 	
 	<target name="clean">
