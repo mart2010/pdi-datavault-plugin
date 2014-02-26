@@ -89,6 +89,7 @@ public class CompositeTest {
 		CompositeValues c3 = new CompositeValues(new Object[] {"v1",new java.sql.Date(10)});	
 		assertTrue(c1.equals(c3));
 			
+		
 	}
 	
 	
