@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." name="pdi_plugin">
+<!-- simple ant just to create jar file and package into zip  -->
+	<property environment="env"/>
+
+	<property name="dist.dir" value="dist"/>
+	<property name="plugin.name" value="pdi-DV-loader"/>
+	
+	<property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
+
+	<target name="build-jar">
+	<jar destfile="lib/${plugin.name}/${plugin.name}.jar"
+	     basedir="bin"
+		 excludes="**/*Test.class,plugin/mo/trans/steps/backup/**/*.class"
+		 update="true"
+	/>
+	</target>
+	
+	<target name="clean">
+	        <delete dir="lib/${plugin.name}" failonerror="false"/>
+    </target>
+
+	<target name='distro' depends='clean,build-jar'>
+	    <zip destfile='${dist.dir}/${plugin.name}.zip' basedir="lib" update="true"/>
+	 </target>
+	
+
+</project>

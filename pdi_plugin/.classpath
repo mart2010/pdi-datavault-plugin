@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry exported="true" kind="lib" path="res"/>
 	<classpathentry kind="lib" path="libext/kettle-core-TRUNK-SNAPSHOT.jar" sourcepath="/pentaho-kettle-master/core/src"/>
 	<classpathentry kind="lib" path="libext/kettle-dbdialog-TRUNK-SNAPSHOT.jar" sourcepath="/pentaho-kettle-master/dbdialog/src"/>
 	<classpathentry kind="lib" path="libext/kettle-engine-TRUNK-SNAPSHOT.jar" sourcepath="/pentaho-kettle-master/engine/src"/>
