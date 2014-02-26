@@ -3,7 +3,7 @@
 bin/
 
 # ignore all dist directories
-dist/
+# dist/
 
 # ignore all lib* directories
 lib*/
