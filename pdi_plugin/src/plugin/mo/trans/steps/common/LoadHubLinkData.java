@@ -498,30 +498,33 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
-	// should cover same key inserted and comitted by a diff thread 
+	// Related to multi-threading: OK, when same key inserted and comitted by a diff thread 
 	// i.e. key was not committed when this thread first populated its map (Phantom read)
-	// however, issue remains where both threads inserted same key and will fail here at commit!! 
+	// NOT-OK when both threads inserted same key so will fail here at commit!! 
 	public void executeBatchInsert(BaseStepMeta meta, int insertCtnExpected) throws KettleDatabaseException {
 		int[] nbIns = null;
 		try {
 			nbIns = prepStmtInsert.executeBatch();
-			//commit ASAP for other threads to get the chance to see new keys 
-			db.commit();
 			prepStmtInsert.clearBatch();
-			if (log.isDebug()) {
-				log.logDebug("Successfully executed insert batch");
-			}
+			//commit ASAP for others to get the chance to see new keys 
+			db.commit();
 		} catch (BatchUpdateException ex) {
-			nbIns = (nbIns == null)? ex.getUpdateCounts() : nbIns;
+			nbIns = ex.getUpdateCounts();
+			SQLException nextException = ex;
+            do {
+              log.logError("Seeding batch nested Exception :", nextException);
+            } while ( ( nextException = nextException.getNextException() ) != null );
+			
 			if (insertCtnExpected == nbIns.length) {
-				log.logError("BatchUpdateException raised but JDBC driver continued processing rows", ex);
+				log.logError("BatchUpdateException raised but JDBC driver continued processing rows");
 				db.commit();
-				// Continue processing as we treat possible issues:
-				// Hub: business key(s) already loaded (to be confirmed later)
-				// Link: either -violation of FKs unique constraint (same issue as Hub) 
-				//              -or FK referential integrity (then fail process...)
+				// Continue processing, possible causes:
+				// Hub: business key(s) already loaded (to be confirmed by later checks)
+				// Link: either -violation of FKs unique constraint (same business key issue as Hub) 
+				//              -or FK referential integrity (then process will fail during check after...)
 			} else {
-				throw new KettleDatabaseException("BatchUpdateException raised and NOT all rows processed",ex);
+				throw new KettleDatabaseException("Unexpected error during batch, only " + nbIns.length 
+						+ " rows processed out of " +insertCtnExpected, ex);
 			}
 		} catch (SQLException ex) {
 			throw new KettleDatabaseException(ex);

@@ -210,11 +210,13 @@ public class LoadSat extends BaseStep implements StepInterface {
 		/***** step-5 --> Complete Stmt batch, send remaining rows & re-init buffer *****/
 		
 		if (insertCtn > 0){
+			//sat rows have "toDate" and require updates
+			boolean requireUpdate = (updateParams != null && updateParams.size() > 0); 
+			
 			//execute Batch insert for all new Rows
 			data.executeBatch(data.getPrepStmtInsertSat(),data.getInsertRowMeta(),insertCtn);
-			
-			//sat rows have "toDate" and require updates
-			if (updateParams != null && updateParams.size() > 0 ){
+
+			if (requireUpdate ){
 				for (Object[] p : updateParams){
 					data.addBatchUpdateStmt(p);
 					incrementLinesUpdated();
@@ -222,7 +224,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				data.executeBatch(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(),updateParams.size());
 			}
 			
-			//Reach the point where all rows have safely landed in DB
+			//Reach the point where all rows are "in-synch" in DB
 			data.db.commit();
 			
 			//Send remaining rows that got inserted into DB
