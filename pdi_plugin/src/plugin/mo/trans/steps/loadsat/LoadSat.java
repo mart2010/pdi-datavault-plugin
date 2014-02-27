@@ -137,7 +137,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 				iter.remove();
 			}
 		}
-		// Finished if all buffer rows were duplicates 
+		// Finish when all buffer rows were duplicates 
 		if (data.getBufferRows().size() == 0) {
 			data.emptyBuffersAndClearPrepStmts();
 			if (!data.finishedAllRows) {
@@ -174,8 +174,8 @@ public class LoadSat extends BaseStep implements StepInterface {
 
 		/***** step-4 --> Prepare Batch insert & Set ToDate if needed ******/
 		
-		//No simultaneous addBatch() possible on different prepareStmt 
-		//so must preserve params for sat updates 
+		//Some JDBC does not support simultaneous addBatch() on different prepareStmt 
+		//so must preserve params for sat updates
 		List<Object[]> updateParams = null;
 		if (meta.isToDateColumnUsed()) {
 			updateParams = new ArrayList<Object[]>();
@@ -223,19 +223,14 @@ public class LoadSat extends BaseStep implements StepInterface {
 				}
 				data.executeBatch(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(),updateParams.size());
 			}
-			
 			//Reach the point where all rows are "in-synch" in DB
 			data.db.commit();
-			
-			//Send remaining rows that got inserted into DB
-			for (Object[] r : data.getBufferRows()) {
-				putRow(data.outputRowMeta, r);
-			}
-		}  else {
-			if (data.getBufferRows().size() > 0 )
-				throw new IllegalStateException("Buffer should be empty, check program logic");		
-		}
+		} 
 		
+		//finished inserting sat record, can flush buffer 
+		for (Object[] r : data.getBufferRows()) {
+			putRow(data.outputRowMeta, r);
+		}
 		data.emptyBuffersAndClearPrepStmts();
 		
 		
