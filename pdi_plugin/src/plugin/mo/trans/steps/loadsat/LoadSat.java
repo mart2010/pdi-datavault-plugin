@@ -165,11 +165,9 @@ public class LoadSat extends BaseStep implements StepInterface {
 				if ((prevRow != null) && !(prevRow.getPkeyValue().equals(satRow.getPkeyValue()))) {
 					prevRow =  null;
 				}
-				log.logError("Avec idempotent, compare the satRow=" + satRow + " et le prevRow=" + prevRow);
 				//remove when previous is identical
 				if (prevRow != null && prevRow.equalsValuesExceptFromDate(satRow)){
 					iterSat.remove();
-					log.logError("Enlever le satRow");
 				}
 			}
 		}

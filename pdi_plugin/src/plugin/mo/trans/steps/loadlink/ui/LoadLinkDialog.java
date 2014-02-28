@@ -704,7 +704,6 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 		String key = (Const.isEmpty(schemaUI) ? "" : schemaUI ) + "." + tableUI;
 		
 		if (cacheColumnMap.get(key) != null){
-			logBasic("Cols return from cache: " + cacheColumnMap.get(key).toStringMeta() );
 			return cacheColumnMap.get(key);
 		} else {
 			//fetch DB data 
@@ -721,7 +720,6 @@ public class LoadLinkDialog extends BaseStepDialog implements StepDialogInterfac
 
 					if (found != null) {
 						cacheColumnMap.put(key,found);
-						logBasic("new Cols from table : " + key +  " now in cache : " + found.toStringMeta()); 
 						return found;
 					} 
 				} catch (Exception e) {
