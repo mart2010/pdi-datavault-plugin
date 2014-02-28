@@ -78,9 +78,9 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	//position index of fields stored in BINARY in row stream (= null if none)
 	private int[] fieldsInBinary = null;
 	
-	// position of surrogate FK in fields mapping (same as satRowMeta)
+	// position of surrogate FK in fields mapping (same as lookupRowMeta)
 	public int posFk = -1;
-	// position of FromDate attribute in fields mapping (same as satRowMeta)
+	// position of FromDate attribute in fields mapping (same as lookupRowMeta)
 	public int posFromDate = -1;
 
 	public Date toDateMaxFlag = null;
@@ -250,7 +250,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 				posFromDate = i;
 			}
 			int mtype = outputRowMeta.getValueMeta(satAttsRowIdx[i]).getType();
-			lookupRowMeta.addValueMeta(i, new ValueMeta(meta.getCols()[i], mtype));
+			lookupRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], mtype));
 		}
 
 		String sql = "SELECT " + cols + " FROM " + qualifiedSatTable + " Sat " + Const.CR;

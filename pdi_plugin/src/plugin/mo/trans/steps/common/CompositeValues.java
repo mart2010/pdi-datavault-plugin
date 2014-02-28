@@ -57,6 +57,9 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	public CompositeValues(Object[] keyvalues) {
 		values = new Object[keyvalues.length];
 		for (int i = 0; i < keyvalues.length; i++) {
+			if (keyvalues[i] == null){
+				throw new IllegalStateException("CompositeValues cannot have null key value");
+			}
 			values[i] = keyvalues[i];
 			hashValue += keyvalues[i].hashCode();
 		}
@@ -71,6 +74,9 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	public CompositeValues(Object[] fullrow, int[] keyvaluesIdx) {
 		values = new Object[keyvaluesIdx.length];
 		for (int i = 0; i < keyvaluesIdx.length; i++) {
+			if (fullrow[keyvaluesIdx[i]] == null){
+				throw new IllegalStateException("CompositeValues cannot have null key value");
+			}
 			values[i] = fullrow[keyvaluesIdx[i]];
 			hashValue += values[i].hashCode();
 		}
@@ -91,6 +97,9 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	public CompositeValues(Object[] fullrow, int from, int n) {
 		values = new Object[n];
 		for (int i = from; i < from+n; i++) {
+			if (fullrow[i] == null){
+				throw new IllegalStateException("CompositeValues cannot have null key value");
+			}
 			values[i-from] = fullrow[i];
 			hashValue += values[i-from].hashCode();
 		}
@@ -99,7 +108,8 @@ public class CompositeValues implements Comparable<CompositeValues>{
 
 	/**
 	 * Construct a SatRow where surKey and FromDate are of type Comparable.  
-	 * This ensures values are correctly sorted inside Sorted Collection.  
+	 * This ensures values are correctly sorted inside Sorted Collection. 
+	 * Satellite attributes may be null but not its pkeyValue  
 	 *   
 	 * @param fullrow
 	 * 		input row
@@ -113,8 +123,14 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	 */
 	@SuppressWarnings("unchecked")
 	public CompositeValues(Object[] row, int[] indexpos, int surkeyIdx, int fromDateIdx){
-		this(row,indexpos);
-	
+		values = new Object[indexpos.length];
+		for (int i = 0; i < indexpos.length; i++) {
+			values[i] = row[indexpos[i]];
+		}
+		if (row[surkeyIdx] == null){
+			throw new IllegalStateException("CompositeValues representing a satRow cannot have null key value");
+		}
+		
 		try {
 			pkeyValue = (Comparable<Object>) row[surkeyIdx];
 			//hashCode must be consistent with Equals
@@ -146,8 +162,14 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	 */
 	@SuppressWarnings("unchecked")
 	public CompositeValues(Object[] row, int from, int n, int surkeyIdx, int fromDateIdx){
-		this(row,from,n);
-	
+		values = new Object[n];
+		for (int i = from; i < from+n; i++) {
+			values[i-from] = row[i];
+		}
+		if (row[surkeyIdx] == null){
+			throw new IllegalStateException("CompositeValues representing a satRow cannot have null key value");
+		}
+
 		try {
 			pkeyValue = (Comparable<Object>) row[surkeyIdx];
 			//hashCode must be consistent with Equals
