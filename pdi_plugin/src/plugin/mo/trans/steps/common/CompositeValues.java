@@ -18,11 +18,16 @@ package plugin.mo.trans.steps.common;
 
 import java.util.Arrays;
 
+import org.pentaho.di.core.Const;
+
 /**
  * A simple object composed of an arbitrary number of field value(s).  
  * Designed to simplify equality comparison when used with 
  * a set of natural keys (key values), or used to simplify 
  * sorting/comparing satellite rows.
+ * 
+ * For satRow, all values that equal the empty string ("") 
+ * are replaced by null to align with PDI logic.
  * 
  * By default, all values are used for Equality comparison (key values).
  * 
@@ -35,7 +40,8 @@ import java.util.Arrays;
  * 
  */
 public class CompositeValues implements Comparable<CompositeValues>{
-
+	private static String EMPTY_STR = "";
+	
 	private final Object[] values;
 	// immutable hash pre-calculated in Constructor
 	private int hashValue = 7;
@@ -57,8 +63,8 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	public CompositeValues(Object[] keyvalues) {
 		values = new Object[keyvalues.length];
 		for (int i = 0; i < keyvalues.length; i++) {
-			if (keyvalues[i] == null){
-				throw new IllegalStateException("CompositeValues cannot have null key value");
+			if (keyvalues[i] == null || keyvalues[i].equals(EMPTY_STR)){
+				throw new IllegalStateException("CompositeValues cannot have null or empty key value");
 			}
 			values[i] = keyvalues[i];
 			hashValue += keyvalues[i].hashCode();
@@ -74,8 +80,8 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	public CompositeValues(Object[] fullrow, int[] keyvaluesIdx) {
 		values = new Object[keyvaluesIdx.length];
 		for (int i = 0; i < keyvaluesIdx.length; i++) {
-			if (fullrow[keyvaluesIdx[i]] == null){
-				throw new IllegalStateException("CompositeValues cannot have null key value");
+			if (fullrow[keyvaluesIdx[i]] == null || fullrow[keyvaluesIdx[i]].equals(EMPTY_STR)){
+				throw new IllegalStateException("CompositeValues cannot have null or empty key value");
 			}
 			values[i] = fullrow[keyvaluesIdx[i]];
 			hashValue += values[i].hashCode();
@@ -97,8 +103,8 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	public CompositeValues(Object[] fullrow, int from, int n) {
 		values = new Object[n];
 		for (int i = from; i < from+n; i++) {
-			if (fullrow[i] == null){
-				throw new IllegalStateException("CompositeValues cannot have null key value");
+			if (fullrow[i] == null || fullrow[i].equals(EMPTY_STR)){
+				throw new IllegalStateException("CompositeValues cannot have null or empty key value");
 			}
 			values[i-from] = fullrow[i];
 			hashValue += values[i-from].hashCode();
@@ -109,7 +115,10 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	/**
 	 * Construct a SatRow where surKey and FromDate are of type Comparable.  
 	 * This ensures values are correctly sorted inside Sorted Collection. 
-	 * Satellite attributes may be null but not its pkeyValue  
+	 * Satellite attributes may be null but not its pkeyValue 
+	 * 
+	 * Important:  values that equals the empty string ("") 
+     * are replaced by null to align with PDI logic.
 	 *   
 	 * @param fullrow
 	 * 		input row
@@ -123,12 +132,17 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	 */
 	@SuppressWarnings("unchecked")
 	public CompositeValues(Object[] row, int[] indexpos, int surkeyIdx, int fromDateIdx){
+		if (row[surkeyIdx] == null  || row[surkeyIdx].equals(EMPTY_STR)){
+			throw new IllegalStateException("satRow CompositeValues cannot have null or empty key value");
+		}
+
 		values = new Object[indexpos.length];
 		for (int i = 0; i < indexpos.length; i++) {
-			values[i] = row[indexpos[i]];
-		}
-		if (row[surkeyIdx] == null){
-			throw new IllegalStateException("CompositeValues representing a satRow cannot have null key value");
+			if (row[indexpos[i]] != null && row[indexpos[i]].equals(EMPTY_STR)){
+				values[i] = null;
+			} else {
+				values[i] = row[indexpos[i]];	
+			}
 		}
 		
 		try {
@@ -146,7 +160,11 @@ public class CompositeValues implements Comparable<CompositeValues>{
 
 	/**
 	 * Construct a SatRow where surKey and FromDate are of type Comparable.  
-	 * This ensures values are correctly sorted inside Sorted Collection.  
+	 * This ensures values are correctly sorted inside Sorted Collection.
+	 * 
+	 * Important:  values that equals the empty string ("") 
+     * are replaced by null to align with PDI logic.
+
 	 *   
 	 * @param fullrow
 	 * 		input row
@@ -162,12 +180,17 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	 */
 	@SuppressWarnings("unchecked")
 	public CompositeValues(Object[] row, int from, int n, int surkeyIdx, int fromDateIdx){
+		if (row[surkeyIdx] == null || row[surkeyIdx].equals(EMPTY_STR) ){
+			throw new IllegalStateException("satRow CompositeValues cannot have null or empty key value");
+		}
+
 		values = new Object[n];
 		for (int i = from; i < from+n; i++) {
-			values[i-from] = row[i];
-		}
-		if (row[surkeyIdx] == null){
-			throw new IllegalStateException("CompositeValues representing a satRow cannot have null key value");
+			if (row[i] != null && row[i].equals(EMPTY_STR)){
+				values[i-from] = null;
+			} else {
+				values[i-from] = row[i];
+			}
 		}
 
 		try {
@@ -205,7 +228,7 @@ public class CompositeValues implements Comparable<CompositeValues>{
 			return false;
 
 		CompositeValues other = (CompositeValues) obj;
-		//normal 
+		//normal key values (all must match)
 		if (pkeyValue == null) {
 			return (Arrays.equals(values, other.values));	
 		} 
@@ -214,7 +237,7 @@ public class CompositeValues implements Comparable<CompositeValues>{
 			return pkeyValue.equals(other.pkeyValue);
 		}
     	//normal sat row 
-		return   pkeyValue.equals(other.pkeyValue)
+		return pkeyValue.equals(other.pkeyValue)
 					&& fromDateValue.equals(other.fromDateValue) ; 
 	}
 
@@ -225,16 +248,24 @@ public class CompositeValues implements Comparable<CompositeValues>{
 
 	/**
 	 * Compare all values irrespective of their "fromDate". 
-	 * Useful to determine identical records 
+	 * 
+	 * For value of type String, both null and empty string ("") 
+	 * are considered equivalent!
+	 * 
+	 * Useful to determine identical sat records for idempotent
 	 * @param other
 	 * @return
 	 */
-	public boolean equalsIgnoreFromDate(CompositeValues other) {
+	public boolean equalsValuesExceptFromDate(CompositeValues other) {
 		
 		for (int i = 0; i < values.length; i++) {
 			if (values[i] != fromDateValue){
-				if (!values[i].equals(other.values[i])){
-					return false;
+				if (values[i] != null){
+					if (!values[i].equals(other.values[i]))
+						return false;
+				} else {
+					if (other.values[i] != null)
+						return false;
 				}
 			}
 		}

@@ -139,6 +139,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 		}
 		// Finish when all buffer rows were duplicates 
 		if (data.getBufferRows().size() == 0) {
+			log.logError("J'ai tout vide le buffer car tout trouve!!");
 			data.emptyBuffersAndClearPrepStmts();
 			if (!data.finishedAllRows) {
 				return true;
@@ -164,9 +165,11 @@ public class LoadSat extends BaseStep implements StepInterface {
 				if ((prevRow != null) && !(prevRow.getPkeyValue().equals(satRow.getPkeyValue()))) {
 					prevRow =  null;
 				}
+				log.logError("Avec idempotent, compare the satRow=" + satRow + " et le prevRow=" + prevRow);
 				//remove when previous is identical
-				if (prevRow != null && prevRow.equalsIgnoreFromDate(satRow)){
+				if (prevRow != null && prevRow.equalsValuesExceptFromDate(satRow)){
 					iterSat.remove();
+					log.logError("Enlever le satRow");
 				}
 			}
 		}
@@ -207,7 +210,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 		}
 		
 
-		/***** step-5 --> Complete Stmt batch, send remaining rows & re-init buffer *****/
+		/***** step-5 --> Complete Stmt batch, commit and send rows ....   *****/
 		
 		if (insertCtn > 0){
 			//sat rows have "toDate" and require updates
@@ -223,10 +226,11 @@ public class LoadSat extends BaseStep implements StepInterface {
 				}
 				data.executeBatch(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(),updateParams.size());
 			}
-			//Reach the point where all rows are "in-synch" in DB
-			data.db.commit();
 		} 
-		
+
+		//Reach the point where all rows are "in-synch" in DB
+		data.db.commit();
+
 		//finished inserting sat record, can flush buffer 
 		for (Object[] r : data.getBufferRows()) {
 			putRow(data.outputRowMeta, r);
@@ -253,7 +257,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 		data.initializeRowProcessing(meta);
 		data.initPrepStmtLookup(meta);
 		data.initPrepStmtInsert(meta);
-		if (!meta.isToDateColumnUsed()) {
+		if (meta.isToDateColumnUsed()) {
 			data.initPrepStmtUpdate(meta);
 		}
 		meta.getFields( data.outputRowMeta, getStepname(), null, null, this, repository, metaStore );

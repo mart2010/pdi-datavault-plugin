@@ -75,7 +75,7 @@ public class CompositeTest {
 		CompositeValues e1 = new CompositeValues(new Object[] {"v1","v2",new Timestamp(100000)},1,2);
 		CompositeValues e2 = new CompositeValues(new Object[] {"v1","v2",new Timestamp(1)},1,2);	
 		assertFalse(e1.equals(e2));
-			
+		
 	}
 
 	@Test
@@ -94,8 +94,31 @@ public class CompositeTest {
 	
 	
 	@Test
-	public void testCompValues() {
+	public void testSatCompValues() {
 
+		//Test SAT ROW with null
+		CompositeValues cnull1 = new CompositeValues(new Object[] {"v1","att1",null,new Timestamp(100000)},0,4,0,3);
+		CompositeValues cnull2 = new CompositeValues(new Object[] {"v1","att1",null,new Timestamp(100000)},0,4,0,3);	
+		assertTrue(cnull1.equals(cnull2));
+		assertEquals(cnull1.hashCode(), cnull2.hashCode());
+
+		assertTrue(cnull1.equalsValuesExceptFromDate(cnull2));
+		
+		CompositeValues cnull3 = new CompositeValues(new Object[] {"v1","att1",null,new Timestamp(100001)},0,4,0,3);
+		assertTrue(!cnull1.equals(cnull3));
+		
+		assertTrue(cnull1.equalsValuesExceptFromDate(cnull3));
+		
+		//check out the empty string is same as null
+		CompositeValues cnull4 = new CompositeValues(new Object[] {"v1","att1","",new Timestamp(100001)},0,4,0,3);
+		assertTrue(cnull3.equalsValuesExceptFromDate(cnull4));
+		assertTrue(cnull4.equalsValuesExceptFromDate(cnull3));
+		
+		CompositeValues cnull5 = new CompositeValues(new Object[] {"v1","att2","",new Timestamp(100001)},0,4,0,3);
+		assertTrue(cnull4.equals(cnull5));
+		assertTrue(!cnull4.equalsValuesExceptFromDate(cnull5));
+		
+		
 		/*
 		CompositeValues c1 = new CompositeValues(new Object[] {"v1",new Timestamp(88888888)},1);
 		CompositeValues c2 = new CompositeValues(new Object[] {"vdddd",new Timestamp(88888888)},1);	
@@ -113,7 +136,7 @@ public class CompositeTest {
 		
 		assertEquals(c1.compareTo(c2),0);
 
-			*/		
+		*/		
 	}
 	
 	@Test

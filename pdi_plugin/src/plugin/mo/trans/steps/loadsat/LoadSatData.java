@@ -502,7 +502,6 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		try {
 			db.setValues(updateToDateRowMeta, values, prepStmtUpdateSat);
 			prepStmtUpdateSat.addBatch();
-			// logError("inserting int batch: " + Arrays.deepToString(values));
 		} catch (SQLException ex) {
 			throw new KettleDatabaseException("Error adding to Update Sat, for rowMeta: "
 					+ updateToDateRowMeta.toStringMeta(), ex);
