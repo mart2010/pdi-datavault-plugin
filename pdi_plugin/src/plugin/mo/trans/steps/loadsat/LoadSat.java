@@ -78,7 +78,12 @@ public class LoadSat extends BaseStep implements StepInterface {
 
 		if (first) {
 			first = false;
-			initializeWithFirstRow();
+			if (originalRow != null){
+				initializeWithFirstRow();	
+			} else {
+				setOutputDone();
+				return false;
+			}
 		}
 
 		// Add current row to Buffer 

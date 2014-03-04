@@ -103,15 +103,20 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 
 		if (first) {
 			first = false;
-			initializeWithFirstRow();
+			if (originalRow != null){
+				initializeWithFirstRow();	
+			} else {
+				setOutputDone();
+				return false;
+			}
 		}
 
 		Object[] rowNullAppended;
 		// Add current row appended with null field to Buffer
 		if (originalRow != null) {
-			//convert fields stored as BINARY (lazy conversion)
-			//this is done implicitly during setValue(), but converting
-			//here avoid converting many times downstream
+			//convert fields stored as BINARY (when input relies on lazy conversion)
+			//this is done implicitly during setValue(), but doing it here
+			//avoid converting many times downstream
 			if (data.getFieldsInBinary() != null){
 				for (int i=0; i < data.getFieldsInBinary().length; i++){
 					int fi = data.getFieldsInBinary()[i];
