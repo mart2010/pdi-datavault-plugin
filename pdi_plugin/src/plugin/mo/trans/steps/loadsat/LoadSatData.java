@@ -112,7 +112,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 
 	public boolean finishedAllRows = false;
 
-	// TODO: all meta audit the sanme way (dedicate class "MetaValues" with
+	// TODO: all meta audit the same way (dedicate class "MetaValues" with
 	// systdate, source, etc.. and fk-batchId..
 	// For now, we just use creation-date
 	private Date nowDate;
