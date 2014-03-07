@@ -144,7 +144,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 		}
 		// Finish when all buffer rows were duplicates 
 		if (data.getBufferRows().size() == 0) {
-			log.logError("J'ai tout vide le buffer car tout trouve!!");
 			data.emptyBuffersAndClearPrepStmts();
 			if (!data.finishedAllRows) {
 				return true;

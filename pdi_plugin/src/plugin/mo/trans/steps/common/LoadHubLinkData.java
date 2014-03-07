@@ -266,7 +266,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		sql.append(endClause);
 
 		try {
-			log.logBasic("Prepared statement for Lookup:" + Const.CR + sql);
+			log.logDebug("Prepared statement for Lookup:" + Const.CR + sql);
 			prepStmtLookup = db.getConnection().prepareStatement(db.getDatabaseMeta().stripCR(sql));
 			if (db.getDatabaseMeta().supportsSetMaxRows()) {
 				// lookup cannot return more than BufferSize
@@ -373,7 +373,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 		String sqlInsert = sqlIns + sqlValues;
 		try {
-			log.logBasic("Prepared statement for insert :" + Const.CR + sqlInsert);
+			log.logDebug("Prepared statement for insert :" + Const.CR + sqlInsert);
 			prepStmtInsert = db.getConnection().prepareStatement(db.getDatabaseMeta().stripCR(sqlInsert));
 		} catch (SQLException ex) {
 			throw new KettleDatabaseException(ex);

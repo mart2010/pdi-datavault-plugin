@@ -276,7 +276,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 
 		try {
-			meta.getLog().logBasic("Prepared statement for Lookup:" + Const.CR + sql);
+			log.logDebug("Prepared statement for Lookup:" + Const.CR + sql);
 			prepStmtLookup = db.getConnection().prepareStatement(dbMeta.stripCR(sql));
 		} catch (SQLException ex) {
 			throw new KettleDatabaseException(ex);
@@ -347,7 +347,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		String sqlIns = ins + cols + " VALUES " + param;
 
 		try {
-			meta.getLog().logBasic("Prepared stmt for Satellite insert:" + Const.CR + sqlIns);
+			log.logDebug("Prepared stmt for Satellite insert:" + Const.CR + sqlIns);
 			prepStmtInsertSat = db.getConnection().prepareStatement(dbMeta.stripCR(sqlIns));
 		} catch (SQLException ex) {
 			throw new KettleDatabaseException(ex);
@@ -373,7 +373,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			String sqlUpd = u + w;
 
 			try {
-				meta.getLog().logBasic("Prepared statement for update:" + Const.CR + sqlUpd);
+				log.logDebug("Prepared statement for update:" + Const.CR + sqlUpd);
 				prepStmtUpdateSat = db.getConnection().prepareStatement(dbMeta.stripCR(sqlUpd));
 			} catch (SQLException ex) {
 				throw new KettleDatabaseException(ex);
