@@ -22,11 +22,15 @@ import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.SQLStatement;
 import org.pentaho.di.core.annotations.Step;
+import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleXMLException;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
@@ -222,7 +226,6 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		}
 	}	
 	
-	
 	public Object clone() {
 		LoadHubMeta retval = (LoadHubMeta) super.clone();
 		int nr = fields.length;
@@ -237,5 +240,5 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		return retval;
 	}
 
-		
+	
 }

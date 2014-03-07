@@ -21,12 +21,16 @@ import java.util.List;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.SQLStatement;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -346,8 +350,62 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 			remarks.add(cr);
 		}
+	}
+	
+	
+	//useful to construct DDL to reflect current settings
+	public SQLStatement getSQLStatements(TransMeta transMeta, StepMeta stepMeta) throws KettleStepException {
+		SQLStatement retval = new SQLStatement( stepMeta.getName(), databaseMeta, null ); 
 
-	}	
+		if (databaseMeta == null){
+			retval.setError( BaseMessages.getString( PKG, "LoadDialog.CheckResult.InvalidConnection" ) );
+			return retval;
+		}
+		
+		if (Const.isEmpty(targetTable)){
+			retval.setError( BaseMessages.getString( PKG, "LoadDialog.CheckResult.NoTable" ) );
+			return retval;
+		}
+	
+		Database db = new Database(loggingObject, databaseMeta);
+		db.shareVariablesWith( transMeta );
+		LoadHubLinkData data = (LoadHubLinkData) getStepData();
+		data.db = db;
+		try {
+			db.connect();
+			
+			data.outputRowMeta = transMeta.getPrevStepFields( stepMeta.getName()).clone();
+			data.initRowIdx(this);
+			data.initPrepStmtInsert(this);
+			
+			
+			if (data.getInsertRowMeta() == null || data.getInsertRowMeta().size() < 1 ){
+				retval.setError( BaseMessages.getString( PKG, "LoadDialog.CheckResult.NoMapping" ) );
+				return retval;
+			}
+			
+			//Add explicit PK when using Sequence or Table-max generation
+			if (isMethodAutoIncrement() || keyGeneration.equals(CREATION_METHOD_SEQUENCE)){
+				data.getInsertRowMeta().addValueMeta(new ValueMetaInteger(techKeyCol));
+			}
+			String schemaTable = databaseMeta.getQuotedSchemaTableCombination( schemaName, targetTable);
+            String cr_table = db.getDDL( schemaTable, data.getInsertRowMeta(), techKeyCol, isMethodAutoIncrement(), techKeyCol );
+
+            if ( cr_table == null || cr_table.length() == 0 ) {
+              cr_table = null;
+            }
+            retval.setSQL( cr_table );
+		} catch ( KettleDatabaseException dbe ) {
+            retval.setError( BaseMessages.getString( PKG, "LoadDialog.Error.ErrorConnecting", dbe.getMessage() ) );
+        } finally {
+            db.disconnect();
+        }
+		return retval;
+	}
+
+	
+	
+	
 	
 	/*
 	 * TODO: verify if we need overriding equals() 

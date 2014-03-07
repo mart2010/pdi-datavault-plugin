@@ -381,7 +381,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	}
 
 
-	private void initRowIdx(BaseLoadMeta meta) throws KettleStepException {
+	public void initRowIdx(BaseLoadMeta meta) throws KettleStepException {
 		int nbKey = 0;
 		int nbNoneKey = 0;
 		int nbBinary = 0;
@@ -575,6 +575,10 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 
 	public Map<CompositeValues, Long> getLookupMapping() {
 		return lookupMapping;
+	}
+
+	public RowMetaInterface getInsertRowMeta() {
+		return insertRowMeta;
 	}
 
 }
