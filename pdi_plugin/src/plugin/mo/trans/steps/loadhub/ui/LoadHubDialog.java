@@ -936,8 +936,8 @@ public class LoadHubDialog extends BaseStepDialog implements StepDialogInterface
 		getInfo(metaH);
 
 		try {
-			SQLStatement sql = metaH.getSQLStatements(transMeta, stepMeta);
-
+			SQLStatement sql = metaH.getSQLStatements(transMeta, stepMeta, null, repository, metaStore);
+			
 			if (!sql.hasError()) {
 				if (sql.hasSQL()) {
 					SQLEditor sqledit = new SQLEditor(transMeta, shell, SWT.NONE, metaH.getDatabaseMeta(),

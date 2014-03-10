@@ -49,6 +49,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.SQLStatement;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
@@ -60,6 +61,7 @@ import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.core.database.dialog.DatabaseExplorerDialog;
+import org.pentaho.di.ui.core.database.dialog.SQLEditor;
 import org.pentaho.di.ui.core.dialog.EnterSelectionDialog;
 import org.pentaho.di.ui.core.dialog.ErrorDialog;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
@@ -70,6 +72,7 @@ import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
@@ -363,7 +366,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		wCancel = new Button(shell, SWT.PUSH);
 		wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
 		
-		setButtonPositions(new Button[] { wOK, wCancel, wGet }, margin, null);
+		setButtonPositions(new Button[] { wOK, wCancel, wGet, wCreate }, margin, null);
 
 		// The Audit Group 
 		Group wAuditFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
@@ -591,6 +594,11 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 				ok();
 			}
 		};
+		lsCreate = new Listener() {
+			public void handleEvent(Event e) {
+				sql();
+			}
+		};
 		lsGet = new Listener() {
 			public void handleEvent(Event e) {
 				getFieldsFromInput();
@@ -605,6 +613,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		wOK.addListener(SWT.Selection, lsOK);
 		wGet.addListener(SWT.Selection, lsGet);
 		wCancel.addListener(SWT.Selection, lsCancel);
+		wCreate.addListener(SWT.Selection, lsCreate);
 
 		lsDef = new SelectionAdapter() {
 			public void widgetDefaultSelected(SelectionEvent e) {
@@ -661,7 +670,6 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 
 	
 	protected void setComboBoxes() {
-
 		final Map<String, Integer> fields = new HashMap<String, Integer>();
 
 		// Add the currentMeta fields...
@@ -676,9 +684,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		ciKey[1].setComboValues(fieldNames);
 	}
 
-	
-	
-	
+
 	public void enableFields() {
 		wlIsIdempotentSat.setEnabled(hasOneTemporalField);
 		wbIsIdempotentSat.setEnabled(hasOneTemporalField);
@@ -909,6 +915,37 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		dispose();
 	}
 
+	private void sql() {
+		LoadSatMeta metaH = new LoadSatMeta();
+		getInfo(metaH);
+
+		try {
+			SQLStatement sql = metaH.getSQLStatements(transMeta, stepMeta, null, repository, metaStore);
+			if (!sql.hasError()) {
+				if (sql.hasSQL()) {
+					SQLEditor sqledit = new SQLEditor(transMeta, shell, SWT.NONE, metaH.getDatabaseMeta(),
+							transMeta.getDbCache(), sql.getSQL());
+					sqledit.open();
+				} else {
+					MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_INFORMATION);
+					mb.setMessage(BaseMessages.getString(PKG, "LoadMeta.NoSQL.DialogMessage"));
+					mb.setText(BaseMessages.getString(PKG, "LoadMeta.NoSQL.DialogTitle"));
+					mb.open();
+				}
+			} else {
+				MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
+				mb.setMessage(sql.getError());
+				mb.setText(BaseMessages.getString(PKG, "System.Dialog.Error.Title"));
+				mb.open();
+			}
+		} catch (KettleException ke) {
+			new ErrorDialog(shell, BaseMessages.getString(PKG, "LoadDialog.BuildSQLError.DialogTitle"),
+					BaseMessages.getString(PKG, "LoadDialog.BuildSQLError.DialogMessage"), ke);
+		}
+	}
+
+	
+	
 	/*
 	 * Update the Meta object according to UI widgets
 	 */

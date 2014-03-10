@@ -22,9 +22,11 @@ import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.SQLStatement;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleXMLException;
@@ -220,8 +222,53 @@ public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 					remarks.add(cr);
 				}
 		}
- 
 	}	
+	
+	
+	//same method as LoadHubMeta (cannot be moved to super class, as Sat not share same logic)
+	@Override
+	public SQLStatement getSQLStatements(TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev,
+			Repository repository, IMetaStore metaStore) throws KettleStepException {
+
+		SQLStatement retval = super.getSQLStatements(transMeta, stepMeta, prev, repository, metaStore);
+		if (retval.getError() != null){
+			return retval;
+		}
+	
+		Database db = new Database(loggingObject, databaseMeta);
+		db.shareVariablesWith( transMeta );
+		LoadHubLinkData data = (LoadHubLinkData) getStepData();
+		data.db = db;
+		try {
+			db.connect();
+			data.outputRowMeta = transMeta.getPrevStepFields( stepMeta.getName()).clone();
+			data.initRowIdx(this);
+			data.initPrepStmtInsert(this);
+			
+			if (data.getInsertRowMeta() == null || data.getInsertRowMeta().size() < 1 ){
+				retval.setError( BaseMessages.getString( PKG, "LoadDialog.CheckResult.NoMapping" ) );
+				return retval;
+			}
+			
+			//Add explicit PK when using Sequence or Table-max generation
+			if (isMethodAutoIncrement() || keyGeneration.equals(CREATION_METHOD_SEQUENCE)){
+				data.getInsertRowMeta().addValueMeta(new ValueMetaInteger(techKeyCol));
+			}
+			String schemaTable = databaseMeta.getQuotedSchemaTableCombination( schemaName, targetTable);
+            String cr_table = db.getDDL( schemaTable, data.getInsertRowMeta(), techKeyCol, isMethodAutoIncrement(), null);
+
+            if ( cr_table == null || cr_table.length() == 0 ) {
+              cr_table = null;
+            }
+            retval.setSQL( cr_table );
+		} catch ( KettleDatabaseException dbe ) {
+            retval.setError( BaseMessages.getString( PKG, "LoadDialog.Error.ErrorConnecting", dbe.getMessage() ) );
+        } finally {
+            db.disconnect();
+        }
+		return retval;
+	}
+	
 	
 	
 	public Object clone() {

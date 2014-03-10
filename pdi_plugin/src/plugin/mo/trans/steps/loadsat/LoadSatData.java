@@ -159,7 +159,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		minDateBuffer = Long.MAX_VALUE;
 	}
 
-	private void initSatAttsRowIdx(LoadSatMeta meta) throws KettleStepException {
+	public void initSatAttsRowIdx(LoadSatMeta meta) throws KettleStepException {
 		satAttsRowIdx = new int[meta.getFields().length];
 		int nbBinary = 0;
 		for (int i = 0; i < meta.getFields().length; i++) {

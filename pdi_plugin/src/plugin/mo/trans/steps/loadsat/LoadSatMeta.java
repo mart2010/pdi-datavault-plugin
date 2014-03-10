@@ -24,14 +24,17 @@ import org.eclipse.swt.widgets.Shell;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.SQLStatement;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.Database;
 import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -50,6 +53,7 @@ import org.w3c.dom.Node;
 
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.LoadHubLinkData;
 import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
 
 /**
@@ -195,8 +199,6 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 		}
 	}
 	
-	
-	
 	public Object clone() {
 		LoadSatMeta retval = (LoadSatMeta) super.clone();
 		int nr = fields.length;
@@ -280,11 +282,47 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_WARNING, error_message, stepMeta);
 			remarks.add(cr);
 		}
-					
 	}
 				
-	
+	@Override
+	public SQLStatement getSQLStatements(TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev,
+			Repository repository, IMetaStore metaStore) throws KettleStepException {
+		
+		SQLStatement retval = super.getSQLStatements(transMeta, stepMeta, prev, repository, metaStore);
+		if (retval.getError() != null){
+			return retval;
+		}
+		
+		Database db = new Database(loggingObject, databaseMeta);
+		db.shareVariablesWith( transMeta );
+		LoadSatData data = (LoadSatData) getStepData();
+		data.db = db;
+		try {
+			db.connect();
+			data.outputRowMeta = transMeta.getPrevStepFields( stepMeta.getName()).clone();
+			data.initSatAttsRowIdx(this);
+			data.initPrepStmtInsert(this);
+			
+			if (data.getInsertRowMeta() == null || data.getInsertRowMeta().size() < 1 ){
+				retval.setError( BaseMessages.getString( PKG, "LoadDialog.CheckResult.NoMapping" ) );
+				return retval;
+			}
+			
+			String schemaTable = databaseMeta.getQuotedSchemaTableCombination( schemaName, targetTable);
+            String cr_table = db.getDDL( schemaTable, data.getInsertRowMeta(), null, false, null );
 
+            if ( cr_table == null || cr_table.length() == 0 ) {
+              cr_table = null;
+            }
+            retval.setSQL( cr_table );
+		} catch ( KettleDatabaseException dbe ) {
+            retval.setError( BaseMessages.getString( PKG, "LoadDialog.Error.ErrorConnecting", dbe.getMessage() ) );
+        } finally {
+            db.disconnect();
+        }
+		return retval;
+	}
+	
 	
 	//not used with LoadLinkMeta
 	public String getIdKeyTypeString() {

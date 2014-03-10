@@ -68,7 +68,7 @@ import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 		image = "hub.png", 	i18nPackageName="plugin.mo.trans.steps.common", 
 		categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
 public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
-	public static String IDENTIFYING_KEY = "Business Key";
+	public static String IDENTIFYING_KEY = "Business/Natural Key";
 	public static String OTHER_TYPE = "Other Attribute";
 	
 
@@ -226,6 +226,56 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		}
 	}	
 	
+	
+	
+	//useful to construct DDL reflecting UI configuration settings
+	@Override
+	public SQLStatement getSQLStatements(TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev,
+			Repository repository, IMetaStore metaStore) throws KettleStepException {
+		
+		SQLStatement retval = super.getSQLStatements(transMeta, stepMeta, prev, repository, metaStore);
+		if (retval.getError() != null){
+			return retval;
+		}
+		
+		Database db = new Database(loggingObject, databaseMeta);
+		db.shareVariablesWith( transMeta );
+		LoadHubLinkData data = (LoadHubLinkData) getStepData();
+		data.db = db;
+		try {
+			db.connect();
+			
+			data.outputRowMeta = transMeta.getPrevStepFields( stepMeta.getName()).clone();
+			data.initRowIdx(this);
+			data.initPrepStmtInsert(this);
+			
+			
+			if (data.getInsertRowMeta() == null || data.getInsertRowMeta().size() < 1 ){
+				retval.setError( BaseMessages.getString( PKG, "LoadDialog.CheckResult.NoMapping" ) );
+				return retval;
+			}
+			
+			//Add explicit PK when using Sequence or Table-max generation
+			if (isMethodAutoIncrement() || keyGeneration.equals(CREATION_METHOD_SEQUENCE)){
+				data.getInsertRowMeta().addValueMeta(new ValueMetaInteger(techKeyCol));
+			}
+			String schemaTable = databaseMeta.getQuotedSchemaTableCombination( schemaName, targetTable);
+            String cr_table = db.getDDL( schemaTable, data.getInsertRowMeta(), techKeyCol, isMethodAutoIncrement(), null);
+
+            if ( cr_table == null || cr_table.length() == 0 ) {
+              cr_table = null;
+            }
+            retval.setSQL( cr_table );
+		} catch ( KettleDatabaseException dbe ) {
+            retval.setError( BaseMessages.getString( PKG, "LoadDialog.Error.ErrorConnecting", dbe.getMessage() ) );
+        } finally {
+            db.disconnect();
+        }
+		return retval;
+
+	}
+
+
 	public Object clone() {
 		LoadHubMeta retval = (LoadHubMeta) super.clone();
 		int nr = fields.length;
