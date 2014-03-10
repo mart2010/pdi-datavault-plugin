@@ -30,7 +30,6 @@ import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleXMLException;
-import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
@@ -54,7 +53,6 @@ import plugin.mo.trans.steps.common.BaseLoadHubLink;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.LoadHubLinkData;
 import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
-import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**

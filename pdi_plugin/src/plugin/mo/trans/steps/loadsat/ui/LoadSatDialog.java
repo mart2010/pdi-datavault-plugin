@@ -71,8 +71,6 @@ import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
 import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.common.CompositeValues;
-import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
@@ -365,6 +363,8 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		wGet.setText(BaseMessages.getString(PKG, "LoadDialog.GetFields.Button"));
 		wCancel = new Button(shell, SWT.PUSH);
 		wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
+		wCreate = new Button(shell, SWT.PUSH);
+		wCreate.setText(BaseMessages.getString(PKG, "System.Button.SQL"));
 		
 		setButtonPositions(new Button[] { wOK, wCancel, wGet, wCreate }, margin, null);
 

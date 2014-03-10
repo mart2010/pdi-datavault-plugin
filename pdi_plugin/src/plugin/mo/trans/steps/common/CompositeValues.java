@@ -18,8 +18,6 @@ package plugin.mo.trans.steps.common;
 
 import java.util.Arrays;
 
-import org.pentaho.di.core.Const;
-
 /**
  * A simple object composed of an arbitrary number of field value(s).  
  * Designed to simplify equality comparison when used with 

@@ -69,8 +69,6 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
-import plugin.mo.trans.steps.common.CompositeValues;
-
 public class LoadAnchorDialog extends BaseStepDialog implements StepDialogInterface {
 	private static Class<?> PKG = LoadAnchor.class;
 
