@@ -4,7 +4,7 @@
 	<property environment="env"/>
 
 	<property name="dist.dir" value="dist"/>
-	<property name="plugin.name" value="pdi-DV-loader"/>
+	<property name="plugin.name" value="DV-loader"/>
 	
 	<property name="target" value="1.6"/>
     <property name="source" value="1.6"/>
