@@ -70,30 +70,17 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
+import plugin.mo.trans.steps.common.BaseLoadDialog;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * 
+ * Load Sat dialog
  *  @author mouellet
  *  
  */
-public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface {
-	private static Class<?> PKG = BaseLoadMeta.class;
-	
-	private CCombo wConnection;
-
-	private Label wlSchema;
-	private TextVar wSchema;
-	private Button wbSchema;
-	private FormData fdbSchema;
-
-	private Label wlSatTable;
-	private Button wbSatTable;
-	private TextVar wSatTable;
-
-	private Label wlBatchSize;
-	private Text wBatchSize;
+public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface {
 
 	private Label wlKey;
 	private TableView wKey;
@@ -107,36 +94,9 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 	private Label wlToDateMax;
 	private Text wToDateMax;
 
-	private Label wlAuditDTSCol;
-	private CCombo wAuditDTSCol;
-	private Label wlAuditRecSrcCol;
-	private CCombo wAuditRecSrcCol;
-	private Label wlAuditRecSrcVal;
-	private TextVar wAuditRecSrcVal;
-
-
-	private Button wGet;
-	private Listener lsGet;
-
-	private ColumnInfo[] ciKey;
-	private LoadSatMeta inputMeta;
-	private DatabaseMeta dbMeta;
-
-	private Map<String, Integer> inputFields;
-	// used to cache columns any tables for connection.schema
-	private Map<String, RowMetaInterface> cacheColumnMap;
-
-	/**
-	 * List of ColumnInfo that should have the field names of the selected
-	 * database table
-	 */
-	private List<ColumnInfo> tableFieldColumns = new ArrayList<ColumnInfo>();
 
 	public LoadSatDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
-		inputMeta = (LoadSatMeta) in;
-		inputFields = new HashMap<String, Integer>();
-		cacheColumnMap = new HashMap<String, RowMetaInterface>();
 	}
 
 	/*
@@ -145,70 +105,14 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 	 * (done by Cancel handler).
 	 */
 	public String open() {
-		Shell parent = getParent();
-		Display display = parent.getDisplay();
-
-		shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MAX | SWT.MIN);
-		props.setLook(shell);
-		setShellImage(shell, inputMeta);
-
-		FormLayout formLayout = new FormLayout();
-		formLayout.marginWidth = Const.FORM_MARGIN;
-		formLayout.marginHeight = Const.FORM_MARGIN;
-
-		shell.setLayout(formLayout);
+		String t = super.open();
 		shell.setText(BaseMessages.getString(PKG, "LoadSatDialog.Shell.Title"));
 
-		int middle = props.getMiddlePct();
-		int margin = Const.MARGIN;
-
-		ModifyListener lsMod = new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				inputMeta.setChanged();
-			}
-		};
-		ModifyListener lsTableMod = new ModifyListener() {
-			public void modifyText(ModifyEvent arg0) {
-				inputMeta.setChanged();
-				setTableFieldCombo();
-			}
-		};
-		SelectionListener lsSelection = new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				inputMeta.setChanged();
-				setTableFieldCombo();
-			}
-		};
-		backupChanged = inputMeta.hasChanged();
-		dbMeta = inputMeta.getDatabaseMeta();
 
 		// Stepname line
-		wlStepname = new Label(shell, SWT.RIGHT);
 		wlStepname.setText(BaseMessages.getString(PKG, "LoadDialog.Stepname.Label"));
-		props.setLook(wlStepname);
-
-		fdlStepname = new FormData();
-		fdlStepname.left = new FormAttachment(0, 0);
-		fdlStepname.right = new FormAttachment(middle, -margin);
-		fdlStepname.top = new FormAttachment(0, margin);
-		wlStepname.setLayoutData(fdlStepname);
-		wStepname = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		wStepname.setText(stepname);
-		props.setLook(wStepname);
-		wStepname.addModifyListener(lsMod);
-		fdStepname = new FormData();
-		fdStepname.left = new FormAttachment(middle, 0);
-		fdStepname.top = new FormAttachment(0, margin);
-		fdStepname.right = new FormAttachment(100, 0);
-		wStepname.setLayoutData(fdStepname);
 
 		// Connection line
-		wConnection = addConnectionLine(shell, wStepname, middle, margin);
-		if (inputMeta.getDatabaseMeta() == null && transMeta.nrDatabases() == 1) {
-			wConnection.select(0);
-		}
-		wConnection.addModifyListener(lsMod);
-		wConnection.addSelectionListener(lsSelection);
 		wConnection.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				// We have new content: change ci connection:
@@ -219,76 +123,12 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		});
 
 		// Schema line...
-		wlSchema = new Label(shell, SWT.RIGHT);
 		wlSchema.setText(BaseMessages.getString(PKG, "LoadDialog.TargetSchema.Label"));
-		props.setLook(wlSchema);
-		FormData fdlSchema = new FormData();
-		fdlSchema.left = new FormAttachment(0, 0);
-		fdlSchema.right = new FormAttachment(middle, -margin);
-		fdlSchema.top = new FormAttachment(wConnection, margin);
-		wlSchema.setLayoutData(fdlSchema);
-
-		wbSchema = new Button(shell, SWT.PUSH | SWT.CENTER);
-		props.setLook(wbSchema);
-		wbSchema.setText(BaseMessages.getString(PKG, "System.Button.Browse"));
-		fdbSchema = new FormData();
-		fdbSchema.top = new FormAttachment(wConnection, margin);
-		fdbSchema.right = new FormAttachment(100, 0);
-		wbSchema.setLayoutData(fdbSchema);
-
-		wSchema = new TextVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wSchema);
-		wSchema.addModifyListener(lsTableMod);
-		FormData fdSchema = new FormData();
-		fdSchema.left = new FormAttachment(middle, 0);
-		fdSchema.top = new FormAttachment(wConnection, margin);
-		fdSchema.right = new FormAttachment(wbSchema, -margin);
-		wSchema.setLayoutData(fdSchema);
 
 		// Sat Table line...
-		wlSatTable = new Label(shell, SWT.RIGHT);
-		wlSatTable.setText(BaseMessages.getString(PKG, "LoadSatDialog.Target.Label"));
-		props.setLook(wlSatTable);
-		FormData fdlTable = new FormData();
-		fdlTable.left = new FormAttachment(0, 0);
-		fdlTable.right = new FormAttachment(middle, -margin);
-		fdlTable.top = new FormAttachment(wbSchema, margin);
-		wlSatTable.setLayoutData(fdlTable);
-
-		wbSatTable = new Button(shell, SWT.PUSH | SWT.CENTER);
-		props.setLook(wbSatTable);
-		wbSatTable.setText(BaseMessages.getString(PKG, "LoadDialog.BrowseTable.Button"));
-		FormData fdbTable = new FormData();
-		fdbTable.right = new FormAttachment(100, 0);
-		fdbTable.top = new FormAttachment(wbSchema, margin);
-		wbSatTable.setLayoutData(fdbTable);
-
-		wSatTable = new TextVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wSatTable);
-		wSatTable.addModifyListener(lsTableMod);
-		FormData fdTable = new FormData();
-		fdTable.left = new FormAttachment(middle, 0);
-		fdTable.top = new FormAttachment(wbSchema, margin);
-		fdTable.right = new FormAttachment(wbSatTable, -margin);
-		wSatTable.setLayoutData(fdTable);
+		wlTargetTable.setText(BaseMessages.getString(PKG, "LoadSatDialog.Target.Label"));
 
 		// Batch size ...
-		wlBatchSize = new Label(shell, SWT.RIGHT);
-		wlBatchSize.setText(BaseMessages.getString(PKG, "LoadDialog.Batchsize.Label"));
-		props.setLook(wlBatchSize);
-		FormData fdlBatch = new FormData();
-		fdlBatch.left = new FormAttachment(0, 0);
-		fdlBatch.right = new FormAttachment(middle, -margin);
-		fdlBatch.top = new FormAttachment(wSatTable, margin);
-		wlBatchSize.setLayoutData(fdlBatch);
-		wBatchSize = new Text(shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wBatchSize);
-		wBatchSize.addModifyListener(lsMod);
-		FormData fdBatch = new FormData();
-		fdBatch.top = new FormAttachment(wSatTable, margin);
-		fdBatch.left = new FormAttachment(middle, 0);
-		fdBatch.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
-		wBatchSize.setLayoutData(fdBatch);
 
 		
 		//Idempotent ?
@@ -354,124 +194,6 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 				enableFields();
 			}
 		});
-
-		
-		// THE BUTTONS
-		wOK = new Button(shell, SWT.PUSH);
-		wOK.setText(BaseMessages.getString(PKG, "System.Button.OK"));
-		wGet = new Button(shell, SWT.PUSH);
-		wGet.setText(BaseMessages.getString(PKG, "LoadDialog.GetFields.Button"));
-		wCancel = new Button(shell, SWT.PUSH);
-		wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
-		wCreate = new Button(shell, SWT.PUSH);
-		wCreate.setText(BaseMessages.getString(PKG, "System.Button.SQL"));
-		
-		setButtonPositions(new Button[] { wOK, wCancel, wGet, wCreate }, margin, null);
-
-		// The Audit Group 
-		Group wAuditFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
-		wAuditFields.setText( BaseMessages.getString( PKG, "LoadDialog.AuditGroupFields.Label" ) );
-		FormLayout auditGroupLayout = new FormLayout();
-	    auditGroupLayout.marginWidth = 3;
-	    auditGroupLayout.marginHeight = 3;
-	    wAuditFields.setLayout( auditGroupLayout );
-	    props.setLook( wAuditFields );
-
-		
-		// Audit RecSrc
-		// Audit DTS :
-		wlAuditDTSCol = new Label(wAuditFields, SWT.RIGHT);
-		wlAuditDTSCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Label"));
-		props.setLook(wlAuditDTSCol);
-		FormData fdlLastUpdateField = new FormData();
-		fdlLastUpdateField.left = new FormAttachment(0, 0);
-		fdlLastUpdateField.right = new FormAttachment(middle, -margin);
-		fdlLastUpdateField.top = new FormAttachment(wAuditFields, margin);
-		wlAuditDTSCol.setLayoutData(fdlLastUpdateField);
-		
-		wAuditDTSCol = new CCombo(wAuditFields, SWT.BORDER );
-		wAuditDTSCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditDTSField.Tooltip"));
-		props.setLook(wAuditDTSCol);
-		wAuditDTSCol.addModifyListener(lsMod);
-		FormData fdLastUpdateField = new FormData();
-		fdLastUpdateField.left = new FormAttachment(middle, 0);
-		fdLastUpdateField.right = new FormAttachment(100, 0);
-		fdLastUpdateField.top = new FormAttachment(wAuditFields, margin);
-		wAuditDTSCol.setLayoutData(fdLastUpdateField);
-		wAuditDTSCol.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent arg0) {}
-			public void focusGained(FocusEvent arg0) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				String t = wAuditDTSCol.getText();
-				setColumnsCombo(wAuditDTSCol, ValueMetaInterface.TYPE_DATE, ValueMetaInterface.TYPE_TIMESTAMP);
-				shell.setCursor(null);
-				wAuditDTSCol.setText(t);
-				busy.dispose();
-			}
-		});
-		
-		//RecSrc Col
-		wlAuditRecSrcCol = new Label(wAuditFields, SWT.RIGHT);
-		wlAuditRecSrcCol.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcCol.Label"));
-		props.setLook(wlAuditRecSrcCol);
-		FormData fdlRecSrcField = new FormData();
-		fdlRecSrcField.left = new FormAttachment(0, 0);
-		fdlRecSrcField.right = new FormAttachment(middle, -margin);
-		fdlRecSrcField.top = new FormAttachment(wAuditDTSCol, margin);
-		wlAuditRecSrcCol.setLayoutData(fdlRecSrcField);
-		
-		wAuditRecSrcCol = new CCombo(wAuditFields, SWT.BORDER );
-		wAuditRecSrcCol.setToolTipText(BaseMessages.getString(PKG, "LoadDialog.AuditRecField.Tooltip"));
-		props.setLook(wAuditRecSrcCol);
-		wAuditRecSrcCol.addModifyListener(lsMod);
-		FormData fdRecSrcField = new FormData();
-		fdRecSrcField.left = new FormAttachment(middle, 0);
-		fdRecSrcField.right = new FormAttachment(100, 0);
-		fdRecSrcField.top = new FormAttachment(wAuditDTSCol, margin);
-		wAuditRecSrcCol.setLayoutData(fdRecSrcField);
-		wAuditRecSrcCol.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent arg0) {}
-			public void focusGained(FocusEvent arg0) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				String t = wAuditRecSrcCol.getText();
-				setColumnsCombo(wAuditRecSrcCol, ValueMetaInterface.TYPE_STRING, -1);
-				shell.setCursor(null);
-				wAuditRecSrcCol.setText(t);
-				busy.dispose();
-			}
-		});
-
-	    
-	    // RecSrc Value ...
-		wlAuditRecSrcVal = new Label(wAuditFields, SWT.RIGHT);
-		wlAuditRecSrcVal.setText(BaseMessages.getString(PKG, "LoadDialog.AuditRecSrcVal.Label"));
-		props.setLook(wlAuditRecSrcVal);
-		FormData fdlRcVal = new FormData();
-		fdlRcVal.left = new FormAttachment(0, 0);
-		fdlRcVal.right = new FormAttachment(middle, -margin);
-		fdlRcVal.top = new FormAttachment(wAuditRecSrcCol, margin);
-		wlAuditRecSrcVal.setLayoutData(fdlRcVal);
-		
-		wAuditRecSrcVal = new TextVar(transMeta, wAuditFields, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wAuditRecSrcVal);
-		wAuditRecSrcVal.addModifyListener(lsMod);
-		FormData fdRcVal = new FormData();
-		fdRcVal.top = new FormAttachment(wAuditRecSrcCol, margin);
-		fdRcVal.left = new FormAttachment(middle, 0);
-		fdRcVal.right = new FormAttachment(100, 0);
-		wAuditRecSrcVal.setLayoutData(fdRcVal);
-
-		
-		//Fixing the Audit group 
-	    FormData fdAuditGroup = new FormData();
-	    fdAuditGroup.left = new FormAttachment( 0, 0 );
-	    fdAuditGroup.right = new FormAttachment( 100, 0 );
-	    fdAuditGroup.bottom = new FormAttachment( wOK, -2*margin );
-	    wAuditFields.setLayoutData( fdAuditGroup );
-	    wAuditFields.setTabList(new Control[] { wAuditRecSrcVal, wAuditRecSrcCol, wAuditDTSCol} );
-
 	    
 		// The optional Group for closing "ToDate"
 		Group wClosingDateFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
@@ -544,7 +266,6 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		wlToDateFlag.setLayoutData(fdlToDateFlag);
 		
 		
-		
 		//Fixing the "ClosingDate" group 
 	    FormData fdOptGroup = new FormData();
 	    fdOptGroup.left = new FormAttachment( 0, 0 );
@@ -553,7 +274,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 	    wClosingDateFields.setLayoutData( fdOptGroup );
 	    wClosingDateFields.setTabList(new Control[] { wcbToDateCol, wToDateMax } );
 
-	    
+   
 		// to fix the Mapping Grid
 		FormData fdKey = new FormData();
 		fdKey.left = new FormAttachment(0, 0);
@@ -561,127 +282,26 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		fdKey.right = new FormAttachment(100, 0);
 		fdKey.bottom = new FormAttachment(wClosingDateFields, -2*margin);
 		wKey.setLayoutData(fdKey);
-
-	    
-	    
-		//
-		// Search the fields in the background
-		//
-		final Runnable runnable = new Runnable() {
-			public void run() {
-				StepMeta stepMeta = transMeta.findStep(stepname);
-				if (stepMeta != null) {
-					try {
-						RowMetaInterface row = transMeta.getPrevStepFields(stepMeta);
-
-						// Remember these fields...
-						for (int i = 0; i < row.size(); i++) {
-							inputFields.put(row.getValueMeta(i).getName(), i);
-						}
-
-						setComboBoxes();
-					} catch (KettleException e) {
-						logError(BaseMessages.getString(PKG, "System.Dialog.GetFieldsFailed.Message"));
-					}
-				}
-			}
-		};
-		new Thread(runnable).start();
-
-		// Add listeners
-		lsOK = new Listener() {
-			public void handleEvent(Event e) {
-				ok();
-			}
-		};
-		lsCreate = new Listener() {
-			public void handleEvent(Event e) {
-				sql();
-			}
-		};
-		lsGet = new Listener() {
-			public void handleEvent(Event e) {
-				getFieldsFromInput();
-			}
-		};
-		lsCancel = new Listener() {
-			public void handleEvent(Event e) {
-				cancel();
-			}
-		};
-
-		wOK.addListener(SWT.Selection, lsOK);
-		wGet.addListener(SWT.Selection, lsGet);
-		wCancel.addListener(SWT.Selection, lsCancel);
-		wCreate.addListener(SWT.Selection, lsCreate);
-
-		lsDef = new SelectionAdapter() {
-			public void widgetDefaultSelected(SelectionEvent e) {
-				ok();
-			}
-		};
-
-		wStepname.addSelectionListener(lsDef);
-		wSchema.addSelectionListener(lsDef);
-		wSatTable.addSelectionListener(lsDef);
-		wBatchSize.addSelectionListener(lsDef);
+    
 		wbIsIdempotentSat.addSelectionListener(lsDef);
 		wcbToDateCol.addSelectionListener(lsDef);
 		wToDateMax.addSelectionListener(lsDef);
-		
-		
 
-		// Detect X or ALT-F4 or something that kills this window...
-		shell.addShellListener(new ShellAdapter() {
-			public void shellClosed(ShellEvent e) {
-				cancel();
-			}
-		});
-		wbSchema.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				getSchemaNames();
-			}
-		});
-
-		wbSatTable.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				getTableName();
-			}
-		});
+		getData();
+		setTableFieldCombo();
+		inputMeta.setChanged(backupChanged);
 
 		// Set the shell size, based upon previous time...
 		setSize();
-
-		setTableFieldCombo();
 		setToDateColumns();
-		getData();
 		
-		inputMeta.setChanged(backupChanged);
-
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
 			}
 		}
-
 		return stepname;
-	}
-
-	
-	protected void setComboBoxes() {
-		final Map<String, Integer> fields = new HashMap<String, Integer>();
-
-		// Add the currentMeta fields...
-		fields.putAll(inputFields);
-
-		Set<String> keySet = fields.keySet();
-		List<String> entries = new ArrayList<String>(keySet);
-
-		String[] fieldNames = entries.toArray(new String[entries.size()]);
-		Const.sortStrings(fieldNames);
-		// pop fields
-		ciKey[1].setComboValues(fieldNames);
 	}
 
 
@@ -695,83 +315,12 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 
 	}
 
-	/*
-	 * To reset cacheColumnMap when connection is changed at the UI
-	 */
-	private void resetColumnsCache() {
-		cacheColumnMap.clear();
-	}
-
-	/*
-	 * Returns from cache the RowMetaInterface associated to "schema.table" as
-	 * entered in UI (populate the cache when "schema.table" not found) Returns
-	 * null for any type of Exception (unknown "schema.table", DB error..)
-	 */
-	private RowMetaInterface getColumnsFromCache(String schemaUI, String tableUI){
-		if (Const.isEmpty(tableUI)){
-			return null;
-		}
-
-		String key = (Const.isEmpty(schemaUI) ? "" : schemaUI ) + "." + tableUI;
-		
-		if (cacheColumnMap.get(key) != null){
-			return cacheColumnMap.get(key);
-		} else {
-			//fetch DB data 
-			String connectionName = wConnection.getText();
-			DatabaseMeta ci = transMeta.findDatabase(connectionName);
-			if (ci != null){
-				Database db = new Database(loggingObject, ci);
-				try {
-					db.connect();
-					String schemaTable = ci.getQuotedSchemaTableCombination(
-							transMeta.environmentSubstitute(schemaUI),
-							transMeta.environmentSubstitute(tableUI));
-					RowMetaInterface found = db.getTableFields(schemaTable);
-
-					if (found != null) {
-						cacheColumnMap.put(key,found);
-						return found;
-					} 
-				} catch (Exception e) {
-					logDebug("Error connecting to DB for caching column names", e);
-					return null;
-				}
-			}
-		}
-		return null;
-	}
-
-	
-	private void setColumnsCombo(CCombo combo, int filterType1, int filterType2) {
-		// clear and reset..
-		combo.removeAll();
-		RowMetaInterface surCols = null;
-
-		//ValueMetaInterface
-		surCols = getColumnsFromCache(wSchema.getText(),wSatTable.getText() );	
-		
-		if (surCols != null){
-			for (int i = 0; i < surCols.getFieldNames().length; i++){
-				if (filterType1 != -1 ){
-					if (filterType1 == surCols.getValueMeta(i).getType()){
-						combo.add(surCols.getFieldNames()[i]);	
-					} else if (filterType2 != -1 && filterType2 == surCols.getValueMeta(i).getType()){
-						combo.add(surCols.getFieldNames()[i]);
-					}
-				} else {
-					combo.add(surCols.getFieldNames()[i]);	
-				}
-			}
-		} 
-	}
-
 	
 	private void setToDateColumns() {
 		// clear and reset..
 		wcbToDateCol.removeAll();
 		RowMetaInterface toCols = null;
-		toCols = getColumnsFromCache(wSchema.getText(),wSatTable.getText() );	
+		toCols = getColumnsFromCache(wSchema.getText(),wTargetTable.getText() );	
 
 		if (toCols != null){
 			wcbToDateCol.add(LoadSatMeta.NA);
@@ -783,78 +332,16 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		}
 	}
 
-
-	
-	private void setTableFieldCombo() {
-		Runnable fieldLoader = new Runnable() {
-			public void run() {
-
-				if (!wSatTable.isDisposed() && !wConnection.isDisposed() && !wSchema.isDisposed()) {
-					String tableName = wSatTable.getText();
-					String schemaName = wSchema.getText();
-
-					// clear
-					for (ColumnInfo colInfo : tableFieldColumns) {
-						colInfo.setComboValues(new String[] {});
-					}
-					
-					RowMetaInterface r = getColumnsFromCache(schemaName, tableName);
-					if (r != null && r.getFieldNames() != null){
-						String[] fieldNames = r.getFieldNames();
-						for (ColumnInfo colInfo : tableFieldColumns) {
-								colInfo.setComboValues(fieldNames);
-						}
-					} else {
-						for (ColumnInfo colInfo : tableFieldColumns) {
-							colInfo.setComboValues(new String[] {});	
-						}
-					}
-					
-				}
-			}
-		};
-		shell.getDisplay().asyncExec(fieldLoader);
-	}
-
 	
 	/**
 	 * Copy information from the meta-data input to the dialog fields.
 	 * 
 	 */
 	public void getData() {
+		super.getData();
 
-		if (inputMeta.getDatabaseMeta() != null) {
-			wConnection.setText(inputMeta.getDatabaseMeta().getName());
-		} else if (transMeta.nrDatabases() == 1) {
-			wConnection.setText(transMeta.getDatabase(0).getName());
-		}
-
-		if (inputMeta.getSchemaName() != null) {
-			wSchema.setText(inputMeta.getSchemaName());
-		}
-
-		if (inputMeta.getTargetTable() != null) {
-			wSatTable.setText(inputMeta.getTargetTable());
-		}
-
-		
-		if (inputMeta.getAuditDtsCol() != null) {
-			wAuditDTSCol.setText(inputMeta.getAuditDtsCol());
-		}
-
-		if (inputMeta.getAuditRecSourceCol() != null){
-			wAuditRecSrcCol.setText(inputMeta.getAuditRecSourceCol());
-		}
-
-		if (inputMeta.getAuditRecSourceValue() != null){
-			wAuditRecSrcVal.setText(inputMeta.getAuditRecSourceValue());
-		}
-
-		
-		hasOneTemporalField = inputMeta.getFromDateColumn() != null ; 
+		hasOneTemporalField = ((LoadSatMeta) inputMeta).getFromDateColumn() != null ; 
 		enableFields();
-
-		wBatchSize.setText("" + inputMeta.getBufferSize());
 
 		if (inputMeta.getFields() != null) {
 			for (int i = 0; i < inputMeta.getFields().length; i++) {
@@ -872,13 +359,13 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 			}
 		}
 
-		if (inputMeta.getToDateColumn() != null) {
-			wcbToDateCol.setText(inputMeta.getToDateColumn());
+		if (((LoadSatMeta) inputMeta).getToDateColumn() != null) {
+			wcbToDateCol.setText(((LoadSatMeta) inputMeta).getToDateColumn());
 		}	
-		if (inputMeta.getToDateMaxFlag() != null) {
-			wToDateMax.setText(inputMeta.getToDateMaxFlag());
+		if (((LoadSatMeta) inputMeta).getToDateMaxFlag() != null) {
+			wToDateMax.setText(((LoadSatMeta) inputMeta).getToDateMaxFlag());
 		}	
-		wbIsIdempotentSat.setSelection(inputMeta.isIdempotent());
+		wbIsIdempotentSat.setSelection(((LoadSatMeta) inputMeta).isIdempotent());
 
 		wKey.setRowNums();
 		wKey.optWidth(true);
@@ -887,35 +374,9 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		wStepname.setFocus();
 	}
 
-	private void cancel() {
-		stepname = null;
-		inputMeta.setChanged(backupChanged);
-		dispose();
-	}
 
-	private void ok() {
-		if (Const.isEmpty(wStepname.getText())) {
-			return;
-		}
 
-		LoadSatMeta oldMetaState = (LoadSatMeta) inputMeta.clone();
-
-		getInfo(inputMeta);
-		stepname = wStepname.getText(); // return value
-
-		if (transMeta.findDatabase(wConnection.getText()) == null) {
-			MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
-			mb.setMessage(BaseMessages.getString(PKG, "LoadDialog.NoValidConnection.DialogMessage"));
-			mb.setText(BaseMessages.getString(PKG, "LoadDialog.NoValidConnection.DialogTitle"));
-			mb.open();
-		}
-		if (!inputMeta.equals(oldMetaState)) {
-			inputMeta.setChanged();
-		}
-		dispose();
-	}
-
-	private void sql() {
+	protected void sql() {
 		LoadSatMeta metaH = new LoadSatMeta();
 		getInfo(metaH);
 
@@ -944,20 +405,11 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		}
 	}
 
-	
-	
 	/*
 	 * Update the Meta object according to UI widgets
 	 */
-	private void getInfo(LoadSatMeta inMeta) {
-
-		inMeta.setDatabaseMeta(transMeta.findDatabase(wConnection.getText()));
-		inMeta.setSchemaName(wSchema.getText());
-		inMeta.setTargetTable(wSatTable.getText());
-		inMeta.setBufferSize(Const.toInt(wBatchSize.getText(), 0));
-		inMeta.setAuditDtsCol(wAuditDTSCol.getText());
-		inMeta.setAuditRecSourceCol(wAuditRecSrcCol.getText());
-		inMeta.setAuditRecSourceValue(wAuditRecSrcVal.getText());
+	protected void getInfo(BaseLoadMeta inMeta) {
+		super.getInfo(inMeta);
 		
 		int nrkeys = wKey.nrNonEmpty();
 		inMeta.allocateKeyArray(nrkeys);
@@ -965,7 +417,7 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 		logDebug("Found nb of Keys=", String.valueOf(nrkeys));
 		
 		//in case temporal not set, then null is used as flag
-		inMeta.setFromDateColumn(null);
+		((LoadSatMeta) inMeta).setFromDateColumn(null);
 		
 		for (int i = 0; i < nrkeys; i++) {
 			TableItem item = wKey.getNonEmpty(i);
@@ -982,84 +434,25 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 			
 			//first temporal found is the one we keep
 			if (item.getText(3).equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)){
-				inMeta.setFromDateColumn(LoadSatMeta.ATTRIBUTE_TEMPORAL);
+				((LoadSatMeta) inMeta).setFromDateColumn(LoadSatMeta.ATTRIBUTE_TEMPORAL);
 			}
 		}
 		
-		inMeta.setToDateColumn(wcbToDateCol.getText());
-		inMeta.setToDateMaxFlag(wToDateMax.getText());
-		inMeta.setIdempotent(wbIsIdempotentSat.getSelection());
+		((LoadSatMeta) inMeta).setToDateColumn(wcbToDateCol.getText());
+		((LoadSatMeta) inMeta).setToDateMaxFlag(wToDateMax.getText());
+		((LoadSatMeta) inMeta).setIdempotent(wbIsIdempotentSat.getSelection());
 		
 	}
 
-	private void getSchemaNames() {
-		DatabaseMeta databaseMeta = transMeta.findDatabase(wConnection.getText());
-		if (databaseMeta != null) {
-			Database database = new Database(loggingObject, databaseMeta);
-			try {
-				database.connect();
-				String[] schemas = database.getSchemas();
 
-				if (null != schemas && schemas.length > 0) {
-					schemas = Const.sortStrings(schemas);
-					EnterSelectionDialog dialog = new EnterSelectionDialog(shell, schemas, BaseMessages.getString(PKG,
-							"LoadDialog.AvailableSchemas.Title", wConnection.getText()), BaseMessages.getString(PKG,
-							"LoadDialog.AvailableSchemas.Message", wConnection.getText()));
-					String d = dialog.open();
-					if (d != null) {
-						wSchema.setText(Const.NVL(d, ""));
-						setTableFieldCombo();
-					}
-
-				} else {
-					MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
-					mb.setMessage(BaseMessages.getString(PKG, "LoadDialog.NoSchema.Error"));
-					mb.setText(BaseMessages.getString(PKG, "LoadDialog.GetSchemas.Error"));
-					mb.open();
-				}
-			} catch (Exception e) {
-				new ErrorDialog(shell, BaseMessages.getString(PKG, "System.Dialog.Error.Title"),
-						BaseMessages.getString(PKG, "LoadDialog.ErrorGettingSchemas"), e);
-			} finally {
-				database.disconnect();
-			}
-		}
-	}
-
-	private void getTableName() {
-		DatabaseMeta inf = null;
-		// New class: SelectTableDialog
-		int connr = wConnection.getSelectionIndex();
-		if (connr >= 0) {
-			inf = transMeta.getDatabase(connr);
-		}
-
-		if (inf != null) {
-			logDebug("Looking at connection: ", inf.toString());
-
-			DatabaseExplorerDialog std = new DatabaseExplorerDialog(shell, SWT.NONE, inf, transMeta.getDatabases());
-			std.setSelectedSchemaAndTable(wSchema.getText(), wSatTable.getText());
-			if (std.open()) {
-				wSchema.setText(Const.NVL(std.getSchemaName(), ""));
-				wSatTable.setText(Const.NVL(std.getTableName(), ""));
-				setTableFieldCombo();
-			}
-		} else {
-			MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
-			mb.setMessage(BaseMessages.getString(PKG, "LoadDialog.ConnectionError2.DialogMessage"));
-			mb.setText(BaseMessages.getString(PKG, "System.Dialog.Error.Title"));
-			mb.open();
-		}
-	}
-
-	private void getFieldsFromInput() {
+	protected void getFieldsFromInput() {
 		try {
 			RowMetaInterface r = transMeta.getPrevStepFields(stepname);
 			if (r != null && !r.isEmpty()) {
 				BaseStepDialog.getFieldsFromPrevious(r, wKey, 1, new int[] { 1, 2 }, new int[] {}, -1, -1,
 						new TableItemInsertListener() {
 							public boolean tableItemInserted(TableItem tableItem, ValueMetaInterface v) {
-								tableItem.setText(3, "N");
+								tableItem.setText(3, LoadSatMeta.ATTRIBUTE_NORMAL);
 								return true;
 							}
 						});
@@ -1069,5 +462,4 @@ public class LoadSatDialog extends BaseStepDialog implements StepDialogInterface
 					BaseMessages.getString(PKG, "LoadDialog.UnableToGetFieldsError.DialogMessage"), ke);
 		}
 	}
-
 }

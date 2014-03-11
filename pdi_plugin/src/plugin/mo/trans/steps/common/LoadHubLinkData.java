@@ -49,7 +49,6 @@ import org.pentaho.di.trans.step.StepDataInterface;
  * Data object usable for both Hub and Link.  It encapsulates
  * data/database logic that are shared between these two.
  * 
- * 
  * @author mouellet
  * 
  */

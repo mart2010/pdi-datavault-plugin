@@ -61,8 +61,8 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * Concurrency is normally managed by blocking operations with synchronization.  
  * Critical operations in Load Hub/Link that require synchronization are:
  * <ul>
- * <li>1) DB look-up on key 
- * <li>2) Insert new key on missed lookups    
+ * <li> DB look-up on key 
+ * <li> Insert new key on missed lookups    
  * </ul>
  * 
  * These operations should be done serially to avoid threads generating different tech keys on 

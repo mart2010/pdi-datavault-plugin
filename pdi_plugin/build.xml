@@ -24,5 +24,4 @@
 	    <zip destfile='${dist.dir}/${plugin.name}.zip' basedir="lib" update="true"/>
 	 </target>
 	
-
 </project>
