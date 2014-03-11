@@ -47,7 +47,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
+import plugin.mo.trans.steps.ui.LoadHubDialog;
 
 /**
  * 

@@ -52,8 +52,8 @@ import org.w3c.dom.Node;
 import plugin.mo.trans.steps.common.BaseLoadHubLink;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.LoadHubLinkData;
-import plugin.mo.trans.steps.loadhub.ui.LoadHubDialog;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
+import plugin.mo.trans.steps.ui.LoadHubDialog;
 
 /**
  * 

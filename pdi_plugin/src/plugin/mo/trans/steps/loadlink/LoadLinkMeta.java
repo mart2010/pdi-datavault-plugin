@@ -52,8 +52,8 @@ import org.w3c.dom.Node;
 import plugin.mo.trans.steps.common.BaseLoadHubLink;
 import plugin.mo.trans.steps.common.BaseLoadMeta;
 import plugin.mo.trans.steps.common.LoadHubLinkData;
-import plugin.mo.trans.steps.loadlink.ui.LoadLinkDialog;
 import plugin.mo.trans.steps.loadsat.LoadSatMeta;
+import plugin.mo.trans.steps.ui.LoadLinkDialog;
 
 /**
  * Meta class used for Link.

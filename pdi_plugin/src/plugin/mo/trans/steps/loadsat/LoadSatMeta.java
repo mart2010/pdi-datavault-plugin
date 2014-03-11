@@ -50,7 +50,7 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
 import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.loadsat.ui.LoadSatDialog;
+import plugin.mo.trans.steps.ui.LoadSatDialog;
 
 /**
  * Meta class used for Satellite.

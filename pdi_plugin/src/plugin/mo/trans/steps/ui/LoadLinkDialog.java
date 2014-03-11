@@ -14,7 +14,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.loadlink.ui;
+package plugin.mo.trans.steps.ui;
 
 import java.util.ArrayList;
 import java.util.HashMap;
