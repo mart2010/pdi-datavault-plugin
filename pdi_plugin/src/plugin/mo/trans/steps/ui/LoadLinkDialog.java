@@ -188,7 +188,7 @@ public class LoadLinkDialog extends BaseLoadDialog implements StepDialogInterfac
 		fdlTk.top = new FormAttachment(gKeyCreationFields, margin);
 		wlTechKey.setLayoutData(fdlTk);
 
-		wTechKey = new CCombo(gKeyCreationFields, SWT.BORDER | SWT.READ_ONLY);
+		wTechKey = new CCombo(gKeyCreationFields, SWT.BORDER);
 		props.setLook(wTechKey);
 		// set its listener
 		wTechKey.addModifyListener(lsMod);

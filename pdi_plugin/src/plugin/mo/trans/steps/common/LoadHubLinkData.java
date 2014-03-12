@@ -497,21 +497,21 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
-	// Related to multi-threading: OK, when same key inserted and comitted by a diff thread 
-	// i.e. key was not committed when this thread first populated its map (Phantom read)
-	// NOT-OK when both threads inserted same key so will fail here at commit!! 
+	// Issues with multi-threading ("# of copies to start.. > 1):  
+	// - PG fails on duplicates since batch is aborted at first insertion 
+	// - MySQL fails with dead-lock while trying to get lock by diff threads
 	public void executeBatchInsert(BaseStepMeta meta, int insertCtnExpected) throws KettleDatabaseException {
 		int[] nbIns = null;
 		try {
 			nbIns = prepStmtInsert.executeBatch();
 			prepStmtInsert.clearBatch();
-			//commit ASAP for others to get the chance to see new keys 
+			//commit ASAP for letting others see new keys 
 			db.commit();
 		} catch (BatchUpdateException ex) {
 			nbIns = ex.getUpdateCounts();
 			SQLException nextException = ex;
             do {
-              log.logError("Seeding batch nested Exception :", nextException);
+              log.logError("Seeding batch nested Exception: " + nextException.getMessage());
             } while ( ( nextException = nextException.getNextException() ) != null );
 			
 			if (insertCtnExpected == nbIns.length) {
@@ -522,7 +522,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 				// Link: either -violation of FKs unique constraint (same business key issue as Hub) 
 				//              -or FK referential integrity (then process will fail during check after...)
 			} else {
-				throw new KettleDatabaseException("Unexpected error during batch, only " + nbIns.length 
+				throw new KettleDatabaseException("Error during batch, only " + nbIns.length 
 						+ " rows processed out of " +insertCtnExpected, ex);
 			}
 		} catch (SQLException ex) {

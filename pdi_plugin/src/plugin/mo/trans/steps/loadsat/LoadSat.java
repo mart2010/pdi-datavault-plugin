@@ -54,6 +54,8 @@ import plugin.mo.trans.steps.common.CompositeValues;
  *      > can either ignore identical consecutive records (Idempotent) or load them as-is
  * 5) Attribute/Satellite table can also include a closing 'toDate' expire column
  * 
+ * Again, as with Load Hub and Sat, the strategy here is then to favor <b>batch</b> over multi-threading.  
+ * So "# of copies to start.." should be 1 for these Steps. 
  *       
  * @author mouellet
  * 
@@ -219,14 +221,14 @@ public class LoadSat extends BaseStep implements StepInterface {
 			boolean requireUpdate = (updateParams != null && updateParams.size() > 0); 
 			
 			//execute Batch insert for all new Rows
-			data.executeBatch(data.getPrepStmtInsertSat(),data.getInsertRowMeta(),insertCtn);
+			data.executeBatch(data.getPrepStmtInsertSat(),insertCtn);
 
 			if (requireUpdate ){
 				for (Object[] p : updateParams){
 					data.addBatchUpdateStmt(p);
 					incrementLinesUpdated();
 				}
-				data.executeBatch(data.getPrepStmtUpdateSat(),data.getUpdateToDateRowMeta(),updateParams.size());
+				data.executeBatch(data.getPrepStmtUpdateSat(),updateParams.size());
 			}
 		} 
 
@@ -247,9 +249,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 			setOutputDone();
 			return false;
 		}
-	
 	}
-	
 	
 	
 	private void initializeWithFirstRow() throws KettleStepException, KettleDatabaseException {

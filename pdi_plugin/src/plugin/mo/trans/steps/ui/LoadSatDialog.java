@@ -148,7 +148,7 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 		fdbExtNatkeyTable.right = new FormAttachment(middle + (100 - middle) / 3, -margin);
 		fdbExtNatkeyTable.top = new FormAttachment(wBatchSize, margin);
 		wbIsIdempotentSat.setLayoutData(fdbExtNatkeyTable);
-
+		wbIsIdempotentSat.setToolTipText(BaseMessages.getString(PKG, "LoadSatDialog.IdempotentTransf.Tooltip"));
 				
 		//
 		// The fields mapping

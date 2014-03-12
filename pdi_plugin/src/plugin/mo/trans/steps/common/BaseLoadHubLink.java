@@ -38,7 +38,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 /**
  * This base step is used for loading both Hub AND Link, and could be override in future
  * for more specialized functions.
- * 
+ * <p>
  * <b>Notes on Batch:</b>
  *  DB round-trips have, by far, the largest impact on transformation processing time. 
  *  Design principle is aiming to mitigate these by favoring "bulk" processing: 
@@ -56,7 +56,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * 
  * Consequently it is a better long term solution to rely on Batch mode.
  *   
- * 
+ * <p>
  * <b>Notes on Concurrency :</b>
  * Concurrency is normally managed by blocking operations with synchronization.  
  * Critical operations in Load Hub/Link that require synchronization are:
@@ -65,17 +65,20 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * <li> Insert new key on missed lookups    
  * </ul>
  * 
- * These operations should be done serially to avoid threads generating different tech keys on 
- * identical business keys ("missed" look-ups).  But these also take the bulk of time 
- * and synchronizing them is equivalent to running them serially (while adding in code complexity 
+ * These consecutive operations must be done serially to avoid generating different tech keys on 
+ * identical business keys ("missed" look-ups).  And these also take the bulk of time 
+ * so synchronizing them is equivalent to running them serially (while adding in code complexity 
  * and increasing likelihood of dead-lock).
  * 
- * The strategy is then to favor batch over multi-threading.  It may be possible to launch many Steps 
- * concurrently (multi-threaded) which works fine in scenario 1, but not 2, so care must be taken:
+ * The strategy is then to favor <b>batch</b> over multi-threading.  So "# of copies to start.." should 
+ * be 1 for these Steps.  
+ * 
+ * It may be possible to launch many Steps concurrently but this would be dependent on yout JDBC driver batch processing
+ * and also only valid for scenario 1 (and not 2) below:
  * 1) at time of lookup, business key did not exist, but duplicate will be ignored during "insert" 
- *    when the other thread had time to commit same key.
- * 2) when two or more threads were able to insert same keys, then commit will fail and the entire 
- *    transformation is invalid.  
+ *    when other thread had time to commit same key.
+ * 2) when two or more threads were able to insert same keys, then commit will fail and entire 
+ *    transformation is invalid.
  * <p>
  * 
  * 

@@ -507,7 +507,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
-	public void executeBatch(PreparedStatement stmt, RowMetaInterface rowMeta, int updateExpected)
+	public void executeBatch(PreparedStatement stmt, int updateExpected)
 			throws KettleDatabaseException {
 		int[] nb = null;
 		try {
@@ -517,7 +517,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			nb = ex.getUpdateCounts();
             SQLException nextException = ex;
             do {
-              log.logError("Seeding batch nested Exception :", nextException);
+              log.logError("Seeding batch nested Exception: " + nextException.getMessage());
             } while ( ( nextException = nextException.getNextException() ) != null );
 
         	// ignore these and only log for now
@@ -525,7 +525,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 				log.logError("Batch executed all rows, assume PK constraint violation due to other process "
 						+ "having loaded same sat record (check previous log messages)");
 			} else {
-				throw new KettleDatabaseException("Unexpected error during batch, only " + nb.length 
+				throw new KettleDatabaseException("Error during batch, only " + nb.length 
 						+ " rows processed out of " +updateExpected, ex);
 			}
 		} catch (SQLException ex) {
