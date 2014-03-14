@@ -393,7 +393,6 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 				if (stepMeta != null) {
 					try {
 						RowMetaInterface row = transMeta.getPrevStepFields(stepMeta);
-
 						// Remember these fields...
 						for (int i = 0; i < row.size(); i++) {
 							inputFields.put(row.getValueMeta(i).getName(), i);
@@ -513,7 +512,7 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 		String[] fieldNames = entries.toArray(new String[entries.size()]);
 		Const.sortStrings(fieldNames);
 		// pop fields
-		if (ciKey[1] != null){
+		if (ciKey != null && ciKey[1] != null){
 			ciKey[1].setComboValues(fieldNames);
 		}
 	}
