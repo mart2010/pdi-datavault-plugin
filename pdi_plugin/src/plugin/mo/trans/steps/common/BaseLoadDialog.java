@@ -513,7 +513,9 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 		String[] fieldNames = entries.toArray(new String[entries.size()]);
 		Const.sortStrings(fieldNames);
 		// pop fields
-		ciKey[1].setComboValues(fieldNames);
+		if (ciKey[1] != null){
+			ciKey[1].setComboValues(fieldNames);
+		}
 	}
 
 	
