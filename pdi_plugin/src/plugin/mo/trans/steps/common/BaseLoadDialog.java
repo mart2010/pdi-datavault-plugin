@@ -386,26 +386,6 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 	    wAuditFields.setLayoutData( fdAuditGroup );
 	    wAuditFields.setTabList(new Control[] { wAuditRecSrcVal, wAuditRecSrcCol, wAuditDTSCol} );
 
-		// Search the fields in the background
-		final Runnable runnable = new Runnable() {
-			public void run() {
-				StepMeta stepMeta = transMeta.findStep(stepname);
-				if (stepMeta != null) {
-					try {
-						RowMetaInterface row = transMeta.getPrevStepFields(stepMeta);
-						// Remember these fields...
-						for (int i = 0; i < row.size(); i++) {
-							inputFields.put(row.getValueMeta(i).getName(), i);
-						}
-						setComboBoxes();
-					} catch (KettleException e) {
-						logError(BaseMessages.getString(PKG, "System.Dialog.GetFieldsFailed.Message"));
-					}
-				}
-			}
-		};
-		new Thread(runnable).start();
-
 		// Add listeners
 		lsOK = new Listener() {
 			public void handleEvent(Event e) {
