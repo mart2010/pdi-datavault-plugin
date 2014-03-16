@@ -445,8 +445,7 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 			}
 		});
 
-		//only sub-class return correct string
-		return null;
+		return stepname;
 	}
 
 	
@@ -492,9 +491,7 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 		String[] fieldNames = entries.toArray(new String[entries.size()]);
 		Const.sortStrings(fieldNames);
 		// pop fields
-		if (ciKey != null && ciKey[1] != null){
-			ciKey[1].setComboValues(fieldNames);
-		}
+		ciKey[1].setComboValues(fieldNames);
 	}
 
 	

@@ -108,7 +108,6 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 		String t = super.open();
 		shell.setText(BaseMessages.getString(PKG, "LoadSatDialog.Shell.Title"));
 
-
 		// Stepname line
 		wlStepname.setText(BaseMessages.getString(PKG, "LoadDialog.Stepname.Label"));
 
@@ -265,7 +264,6 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 		fdlToDateFlag.top = new FormAttachment(wcbToDateCol, 2*margin);
 		wlToDateFlag.setLayoutData(fdlToDateFlag);
 		
-		
 		//Fixing the "ClosingDate" group 
 	    FormData fdOptGroup = new FormData();
 	    fdOptGroup.left = new FormAttachment( 0, 0 );
@@ -282,16 +280,7 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 		fdKey.right = new FormAttachment(100, 0);
 		fdKey.bottom = new FormAttachment(wClosingDateFields, -2*margin);
 		wKey.setLayoutData(fdKey);
-    
-		wbIsIdempotentSat.addSelectionListener(lsDef);
-		wcbToDateCol.addSelectionListener(lsDef);
-		wToDateMax.addSelectionListener(lsDef);
 
-		getData();
-		setTableFieldCombo();
-		inputMeta.setChanged(backupChanged);
-
-		// Cannot be done by superclass since ciKey does not exist
 		// search the fields in the background
 		final Runnable runnable = new Runnable() {
 			public void run() {
@@ -311,7 +300,14 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 			}
 		};
 		new Thread(runnable).start();
+		
+		wbIsIdempotentSat.addSelectionListener(lsDef);
+		wcbToDateCol.addSelectionListener(lsDef);
+		wToDateMax.addSelectionListener(lsDef);
 
+		getData();
+		setTableFieldCombo();
+		inputMeta.setChanged(backupChanged);
 		
 		// Set the shell size, based upon previous time...
 		setSize();

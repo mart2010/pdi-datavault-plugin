@@ -298,14 +298,6 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		fdKey.bottom = new FormAttachment(gKeyCreationFields, -margin);
 		wKey.setLayoutData(fdKey);
 
-		wSeq.addSelectionListener(lsDef);
-		wTechKey.addSelectionListener(lsDef);
-
-		getData();
-		setTableFieldCombo();
-		inputMeta.setChanged(backupChanged);
-
-		// Cannot be done by superclass since ciKey does not exist
 		// search the fields in the background
 		final Runnable runnable = new Runnable() {
 			public void run() {
@@ -325,7 +317,15 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 			}
 		};
 		new Thread(runnable).start();		
+	
 		
+		wSeq.addSelectionListener(lsDef);
+		wTechKey.addSelectionListener(lsDef);
+
+		getData();
+		setTableFieldCombo();
+		inputMeta.setChanged(backupChanged);
+	
 		// Set the shell size, based upon previous time...
 		setSize();
 		
