@@ -399,12 +399,12 @@ public class LoadLinkDialog extends BaseLoadDialog implements StepDialogInterfac
 			wAutoinc.setSelection(true);
 		} else if ((BaseLoadMeta.CREATION_METHOD_SEQUENCE.equals(surrKeyCreation))) {
 			wSeqButton.setSelection(true);
+			if (inputMeta.getSequenceName() != null) {
+				wSeq.setText(inputMeta.getSequenceName());
+			}
 		} else { // TableMax is also the default when no creation is yet defined
 			wTableMax.setSelection(true);
 			inputMeta.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_TABLEMAX);
-		}
-		if (inputMeta.getSequenceName() != null) {
-			wSeq.setText(inputMeta.getSequenceName());
 		}
 
 		setAutoincUse();

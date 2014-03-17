@@ -215,7 +215,7 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 		fdlNatTable.top = new FormAttachment(wClosingDateFields, margin);
 		wlToDateCol.setLayoutData(fdlNatTable);
 
-		wcbToDateCol = new CCombo(wClosingDateFields, SWT.BORDER | SWT.READ_ONLY);
+		wcbToDateCol = new CCombo(wClosingDateFields, SWT.BORDER );
 		props.setLook(wcbToDateCol);
 		wcbToDateCol.addModifyListener(lsMod);
 		FormData fdToDate = new FormData();
@@ -311,8 +311,7 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 		
 		// Set the shell size, based upon previous time...
 		setSize();
-		setToDateColumns();
-		
+
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
