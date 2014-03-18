@@ -280,7 +280,7 @@ public class CompositeValues implements Comparable<CompositeValues>{
 	@Override
 	public int compareTo(CompositeValues o) {
 		if (pkeyValue == null){
-			throw new IllegalStateException("Cannot sort object without valid surrkey value");
+			throw new IllegalStateException("Cannot sort object without valid pkey value");
 		}
 
 		//immutable sat row
@@ -319,7 +319,7 @@ public class CompositeValues implements Comparable<CompositeValues>{
 
 	@Override
 	public String toString() {
-		return "CompositeValues [values=" + Arrays.toString(values) + ", surrkeyValue=" + pkeyValue
+		return "CompositeValues [values=" + Arrays.toString(values) + ", pkeyValue=" + pkeyValue
 				+ ", fromDateValue=" + fromDateValue + "]";
 	}
 

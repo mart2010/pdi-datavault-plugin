@@ -166,14 +166,25 @@ public class LoadSat extends BaseStep implements StepInterface {
 			    if (satRow.isPersisted()){
 			    	continue;
 			    }
-				CompositeValues prevRow = data.getBufferSatHistRows().lower(satRow);
-				//newRow is very 1st record in history
+			    CompositeValues prevRow = data.getBufferSatHistRows().lower(satRow);
+			    
 				if ((prevRow != null) && !(prevRow.getPkeyValue().equals(satRow.getPkeyValue()))) {
 					prevRow =  null;
 				}
-				//remove when previous is identical
-				if (prevRow != null && prevRow.equalsValuesExceptFromDate(satRow)){
-					iterSat.remove();
+
+				if (prevRow != null){
+					//remove when previous is identical
+					if (prevRow.equalsValuesExceptFromDate(satRow)){ 
+						iterSat.remove();	
+					}
+				} else {
+				//satRow is very 1st record
+					CompositeValues nextRow = data.getBufferSatHistRows().higher(satRow); 
+					//Exceptionally there is previously a first record persisted with same value!!
+					// At this point, cannot "rebuild the past" so keep the original 1st record 
+					if (nextRow != null && nextRow.equalsValuesExceptFromDate(satRow)) {
+						iterSat.remove();
+					}
 				}
 			}
 		}

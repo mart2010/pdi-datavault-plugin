@@ -219,7 +219,7 @@ public class LoadLinkDialog extends BaseLoadDialog implements StepDialogInterfac
 		fdSurrGroup.top = new FormAttachment(wTechKey, margin);
 		fdSurrGroup.right = new FormAttachment(100, 0);
 		gSurrGroup.setBackground(shell.getBackground());
-
+		
 		gSurrGroup.setLayoutData(fdSurrGroup);
 
 		// Use maximum of table + 1
@@ -249,7 +249,7 @@ public class LoadLinkDialog extends BaseLoadDialog implements StepDialogInterfac
 		props.setLook(wlSeqButton);
 		GridData gdlSeqButton = new GridData();
 		wlSeqButton.setLayoutData(gdlSeqButton);
-
+				
 		wSeq = new Text(gSurrGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
 		props.setLook(wSeq);
 		wSeq.addModifyListener(lsMod);
@@ -262,9 +262,7 @@ public class LoadLinkDialog extends BaseLoadDialog implements StepDialogInterfac
 				wAutoinc.setSelection(false);
 				wTableMax.setSelection(false);
 			}
-
-			public void focusLost(FocusEvent arg0) {
-			}
+			public void focusLost(FocusEvent arg0) {}
 		});
 
 		// Use an auto-increment field?

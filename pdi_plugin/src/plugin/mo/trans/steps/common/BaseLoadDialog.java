@@ -67,9 +67,6 @@ import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
-import plugin.mo.trans.steps.loadlink.LoadLinkMeta;
-import plugin.mo.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * Dialog superclass used for all shared UI components
