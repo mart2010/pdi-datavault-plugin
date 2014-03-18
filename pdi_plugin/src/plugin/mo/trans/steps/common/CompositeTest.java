@@ -209,6 +209,42 @@ public class CompositeTest {
 		
 	}
 
+	@Test
+	public void testSortedSetMixingDateType() {
+		CompositeValues c1Timestamp = new CompositeValues(new Object[] {new Long(10), "a1","a2", new Timestamp(88)}
+									,new int[] {0, 1, 3}, 0, 3);		
+		CompositeValues samec1ButWithDate 
+						   = new CompositeValues(new Object[] {new Long(10), "a1","a2", new Date(88)}
+									,new int[] {0, 1, 3}, 0, 3);
+		
+		//mixing Date and Timestamp  
+		//c1 has nanosecond so will never be equal to any Date
+		assertFalse(c1Timestamp.equals(samec1ButWithDate));
+		// but the reverse is ok as Date does not have nano and ignore this nano sec of Timestamp!
+		assertTrue(samec1ButWithDate.equals(c1Timestamp));
+
+		//But these two types represent the same day!! 
+		//Reversing the comparison of compareTo behaves also the same  
+		assertTrue(c1Timestamp.compareTo(samec1ButWithDate) == 0);
+		assertFalse(samec1ButWithDate.compareTo(c1Timestamp) == 0);
+		
+		//this is explained by:
+		Date d = new Date(100);
+		Timestamp t = new Timestamp(100);
+		assertTrue(t.compareTo(d) == 0);
+		//BUT THE REVERSE IS NOT TRUE!! I guess because Timestamp is a subclass of Date (and not the ther way around) 
+		assertFalse(d.compareTo(t)==0);
+		
+		//So inserting these into the Set will behave differently depending on the order...
+		SortedSet<CompositeValues> s = new TreeSet<CompositeValues>();		
+		s.add(samec1ButWithDate);
+		//Explaining the eratic behavior of satHistMap when mixing Date & Timestamp
+		assertFalse(s.add(c1Timestamp));
+		assertTrue(s.remove(samec1ButWithDate));
+		s.add(c1Timestamp);
+		assertTrue(s.add(samec1ButWithDate));
+		
+	}
 	
 	
 	
