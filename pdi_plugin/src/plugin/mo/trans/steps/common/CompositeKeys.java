@@ -118,7 +118,7 @@ public class CompositeKeys {
 
 	@Override
 	public String toString() {
-		return "CompositeKeys [keys=" + Arrays.toString(values) + "]";
+		return "CompositeKeys[keys=" + Arrays.toString(values) + "]";
 	}
 
 	

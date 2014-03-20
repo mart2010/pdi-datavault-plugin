@@ -36,7 +36,7 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
-import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.CompositeKeys;
 
 /**
  * 
@@ -149,7 +149,7 @@ public class LoadAnchor extends BaseStep implements StepInterface {
 
 		//populate buffer LookupMapping
 		for (Object[] r : data.db.getRows(rs, meta.getBufferSize(), null)) {
-			CompositeValues n = new CompositeValues(r,1,data.getNatkeysRowIdx().length);
+			CompositeKeys n = new CompositeKeys(r,1,data.getNatkeysRowIdx().length);
 			data.getBufferLookupMapping().put(n, (Long) r[0]);
 		}
 
@@ -161,7 +161,7 @@ public class LoadAnchor extends BaseStep implements StepInterface {
 		Iterator<Object[]> iter = data.getBufferRows().iterator();
 		while (iter.hasNext()) {
 			Object[] r = iter.next();
-			CompositeValues n = new CompositeValues(r, data.getNatkeysRowIdx());
+			CompositeKeys n = new CompositeKeys(r, data.getNatkeysRowIdx());
 			Long sKey = data.getBufferLookupMapping().get(n);
 
 			// Successful lookup, append surr-key
@@ -198,7 +198,7 @@ public class LoadAnchor extends BaseStep implements StepInterface {
 			Object[] curRow = data.getBufferRows().get(i);
 
 			// There could be duplicates in new added rows as well
-			CompositeValues newCompNatKeys = new CompositeValues(curRow, data.getNatkeysRowIdx());
+			CompositeKeys newCompNatKeys = new CompositeKeys(curRow, data.getNatkeysRowIdx());
 			Long newKeysDup = data.getBufferLookupMapping().get(newCompNatKeys);
 			
 			// Duplicate found, skip this iteration 

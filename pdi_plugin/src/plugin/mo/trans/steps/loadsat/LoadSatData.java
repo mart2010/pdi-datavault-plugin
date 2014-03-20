@@ -47,7 +47,7 @@ import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.SatRecord;
 
 /**
  * 
@@ -107,7 +107,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	private int[] satAttsRowIdx;
 
 	// hold buffer Sat rows as returned from prepStmtLookup query
-	private NavigableSet<CompositeValues> bufferSatHistRows;
+	private NavigableSet<SatRecord> bufferSatHistRows;
 
 	public boolean finishedAllRows = false;
 
@@ -143,7 +143,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 
 		if (bufferSatHistRows == null) {
-			bufferSatHistRows = new TreeSet<CompositeValues>();
+			bufferSatHistRows = new TreeSet<SatRecord>();
 		}
 
 		// initialize all naming needing variable substitution (${var})
@@ -426,7 +426,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 
 		for (Object[] r : getLookupRows(rs, meta)) {
-			CompositeValues v = new CompositeValues(r, 0, lookupRowMeta.size(), posFk, posFromDate);
+			SatRecord v = new SatRecord(r, 0, lookupRowMeta.size(), posFk, posFromDate);
 			// flag records coming from DB
 			v.setAsPersisted();
 			// records from DB have integrity so no duplicates expected
@@ -565,7 +565,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		return fieldsInBinary;
 	}
 
-	public NavigableSet<CompositeValues> getBufferSatHistRows() {
+	public NavigableSet<SatRecord> getBufferSatHistRows() {
 		return bufferSatHistRows;
 	}
 

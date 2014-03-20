@@ -42,7 +42,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.CompositeKeys;
 
 /**
  * 
@@ -77,7 +77,7 @@ public class LoadAnchorData extends BaseStepData implements StepDataInterface {
 	// Buffer storing original input rows appended with new surrKey
 	private List<Object[]> bufferRows;
 	// hold the lookup record (n-key(s) + surrKey) returned from DB
-	private Map<CompositeValues, Long> bufferLookupMapping;
+	private Map<CompositeKeys, Long> bufferLookupMapping;
 
 	public boolean finishedAllRows = false;
 
@@ -112,7 +112,7 @@ public class LoadAnchorData extends BaseStepData implements StepDataInterface {
 		return bufferRows;
 	}
 
-	public Map<CompositeValues, Long> getBufferLookupMapping() {
+	public Map<CompositeKeys, Long> getBufferLookupMapping() {
 		return bufferLookupMapping;
 	}
 
@@ -144,7 +144,7 @@ public class LoadAnchorData extends BaseStepData implements StepDataInterface {
 
 		if (this.bufferLookupMapping == null) {
 			int capacity = (int) ((bsize)/0.75+1);
-			this.bufferLookupMapping = new HashMap<CompositeValues, Long>(capacity);
+			this.bufferLookupMapping = new HashMap<CompositeKeys, Long>(capacity);
 		}
 
 		this.bufferRows.clear();

@@ -35,7 +35,7 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
 import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.common.CompositeValues;
+import plugin.mo.trans.steps.common.SatRecord;
 
 /**
  * 
@@ -135,7 +135,7 @@ public class LoadSat extends BaseStep implements StepInterface {
 		Iterator<Object[]> iter = data.getBufferRows().iterator();
 		while (iter.hasNext()) {
 			Object[] bufferRow = iter.next();
-			CompositeValues newRow = new CompositeValues(bufferRow,data.getSatAttsRowIdx(),
+			SatRecord newRow = new SatRecord(bufferRow,data.getSatAttsRowIdx(),
 											data.posFkInRow,data.posFromDateInRow);
 			
 			if (!data.getBufferSatHistRows().add(newRow)){
@@ -160,29 +160,29 @@ public class LoadSat extends BaseStep implements StepInterface {
 		/***** step-3 --> When Idempotent remove new duplicates record ******/
 		
 		if (meta.isIdempotent()) {
-			Iterator<CompositeValues> iterSat = data.getBufferSatHistRows().iterator();
+			Iterator<SatRecord> iterSat = data.getBufferSatHistRows().iterator();
 			while (iterSat.hasNext()) {
-			    CompositeValues satRow = iterSat.next();
+			    SatRecord satRow = iterSat.next();
 			    if (satRow.isPersisted()){
 			    	continue;
 			    }
-			    CompositeValues prevRow = data.getBufferSatHistRows().lower(satRow);
+			    SatRecord prevRow = data.getBufferSatHistRows().lower(satRow);
 			    
-				if ((prevRow != null) && !(prevRow.getPkeyValue().equals(satRow.getPkeyValue()))) {
+				if ((prevRow != null) && !(prevRow.getTechkeyValue().equals(satRow.getTechkeyValue()))) {
 					prevRow =  null;
 				}
 
 				if (prevRow != null){
 					//remove when previous is identical
-					if (prevRow.equalsValuesExceptFromDate(satRow)){ 
+					if (prevRow.equalsNoCheckOnDate(satRow)){ 
 						iterSat.remove();	
-					}
+					} 
 				} else {
 				//satRow is very 1st record
-					CompositeValues nextRow = data.getBufferSatHistRows().higher(satRow); 
-					//Exceptionally there is previously a first record persisted with same value!!
+					SatRecord nextRow = data.getBufferSatHistRows().higher(satRow); 
+					//Exceptionally there was previously a first record with same value!!
 					// At this point, cannot "rebuild the past" so keep the original 1st record 
-					if (nextRow != null && nextRow.equalsValuesExceptFromDate(satRow)) {
+					if (nextRow != null && nextRow.equalsNoCheckOnDate(satRow)) {
 						iterSat.remove();
 					}
 				}
@@ -200,16 +200,17 @@ public class LoadSat extends BaseStep implements StepInterface {
 		}
 		int insertCtn = 0;
 		
-		for (CompositeValues rec : data.getBufferSatHistRows()){
-			CompositeValues nextRec = data.getBufferSatHistRows().higher(rec);
-			if (nextRec != null && !nextRec.getPkeyValue().equals(rec.getPkeyValue())){
+		for (SatRecord rec : data.getBufferSatHistRows()){
+			SatRecord nextRec = data.getBufferSatHistRows().higher(rec);
+			if (nextRec != null && !nextRec.getTechkeyValue().equals(rec.getTechkeyValue())){
 				nextRec = null;
 			}
 			Object optToDate = null;
 			//batch insert new record
 			if (!rec.isPersisted()){
 				if (meta.isToDateColumnUsed()){
-					optToDate = (nextRec == null) ? data.toDateMaxFlag : nextRec.getFromDateValue() ;	
+					optToDate = (nextRec == null) ? data.toDateMaxFlag : 
+						nextRec.getValues()[data.posFromDate];	
 				}
 				data.addBatchInsert(meta, rec.getValues(), optToDate);
 				insertCtn++;
@@ -217,9 +218,9 @@ public class LoadSat extends BaseStep implements StepInterface {
 			} else {
 			//for existing record now followed by a new one, add param to update (when)
 				if (meta.isToDateColumnUsed() && nextRec != null && !nextRec.isPersisted()){
-					updateParams.add(new Object[]{nextRec.getFromDateValue()
-							,rec.getPkeyValue()
-							,rec.getFromDateValue() });
+					updateParams.add(new Object[]{nextRec.getValues()[data.posFromDate] 
+							,rec.getTechkeyValue()
+							,rec.getValues()[data.posFromDate] });
 				}
 			}
 		}

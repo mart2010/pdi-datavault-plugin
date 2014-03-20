@@ -80,7 +80,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	private List<Object[]> bufferRows;
 
 	// hold the lookup record (key(s) --> PKey)
-	private Map<CompositeValues, Long> lookupMapping;
+	private Map<CompositeKeys, Long> lookupMapping;
 
 	public boolean finishedAllRows = false;
 
@@ -107,7 +107,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 		if (lookupMapping == null) {
 			int capacity = (int) ((meta.getBufferSize()) / 0.75 + 1);
-			lookupMapping = new HashMap<CompositeValues, Long>(capacity);
+			lookupMapping = new HashMap<CompositeKeys, Long>(capacity);
 		}
 		initRowIdx(meta);
 
@@ -122,12 +122,12 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 	}
 
 	public Long getKeyfromLookupMap(Object[] originalRow) {
-		CompositeValues n = new CompositeValues(originalRow, keysRowIdx);
+		CompositeKeys n = new CompositeKeys(originalRow, keysRowIdx);
 		return lookupMapping.get(n);
 	}
 
 	public boolean putKeyInMap(Object[] originalRow, Long valKey) {
-		CompositeValues n = new CompositeValues(originalRow, keysRowIdx);
+		CompositeKeys n = new CompositeKeys(originalRow, keysRowIdx);
 		if (lookupMapping.containsKey(n)) {
 			return false;
 		} else {
@@ -178,7 +178,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		}
 
 		for (Object[] r : getLookupRows(rs, keysRowIdx.length + 1, nbParamsClause)) {
-			CompositeValues v = new CompositeValues(r, 1, keysRowIdx.length);
+			CompositeKeys v = new CompositeKeys(r, 1, keysRowIdx.length);
 			lookupMapping.put(v, (Long) r[0]);
 		}
 		return lookupMapping.size();
@@ -572,7 +572,7 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 		return lookupRowMeta;
 	}
 
-	public Map<CompositeValues, Long> getLookupMapping() {
+	public Map<CompositeKeys, Long> getLookupMapping() {
 		return lookupMapping;
 	}
 
