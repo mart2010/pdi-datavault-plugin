@@ -390,6 +390,10 @@ public class LoadHubLinkData extends BaseStepData implements StepDataInterface {
 			} else if (meta.getTypes()[i].equals(meta.getOtherTypeString())) {
 				nbNoneKey++;
 			}
+			if (outputRowMeta.indexOfValue(meta.getFields()[i]) < 0) {
+				throw new KettleStepException(BaseMessages.getString(PKG, "Load.Exception.FieldNotFound",
+						meta.getFields()[i]));
+			}
 			
 			ValueMetaInterface vl = outputRowMeta.getValueMeta
 										(outputRowMeta.indexOfValue(meta.getFields()[i]));
