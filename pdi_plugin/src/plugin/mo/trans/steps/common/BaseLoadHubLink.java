@@ -73,12 +73,13 @@ import org.pentaho.di.trans.step.StepMetaInterface;
  * The strategy is then to favor <b>batch</b> over multi-threading.  So "# of copies to start.." should 
  * be 1 for these Steps.  
  * 
- * It may be possible to launch many Steps concurrently but this would be dependent on yout JDBC driver batch processing
- * and also only valid for scenario 1 (and not 2) below:
- * 1) at time of lookup, business key did not exist, but duplicate will be ignored during "insert" 
+ * It may be possible to launch many Steps concurrently but this would be dependent on JDBC driver specifics 
+ * and would also only be valid for first scenario below:<ul>
+ * <li>1) at time of lookup, business key did not exist, but duplicate will be ignored during "insert" 
  *    when other thread had time to commit same key.
- * 2) when two or more threads were able to insert same keys, then commit will fail and entire 
+ * <li>2) when two or more threads were able to insert same keys, then commit will fail and entire 
  *    transformation is invalid.
+ * </ul>
  * <p>
  * 
  * 
@@ -148,7 +149,7 @@ public class BaseLoadHubLink extends BaseStep implements StepInterface {
 
 
 		/*****
-		 * From here: buffer is either full OR partially full with no more rows expected
+		 * From here: buffer is either full OR partially full with no more rows to process
 		 *****/
 		
 		/***** step-1 --> Query DB and fill LookupMap  ******/

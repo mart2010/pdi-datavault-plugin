@@ -65,7 +65,8 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	public static String ATTRIBUTE_NORMAL = "Normal Attribute";
 	public static String ATTRIBUTE_TEMPORAL = "From-Date Temporal";
 	public static String ATTRIBUTE_FK = "Foreign-Key to Hub";
-		
+	public static String ATTRIBUTE_META = "Meta Attribute";
+	
 	public static String NA = "n.a.";
 	public static String DEFAULT_MAX_DATE = "01-01-4000";
 	public static String DATE_FORMAT = "dd-MM-yyyy";
@@ -85,6 +86,8 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	private String toDateMaxFlag;
 
 	private boolean isIdempotent;
+	
+	
 	
 	
 	public LoadSatMeta() {

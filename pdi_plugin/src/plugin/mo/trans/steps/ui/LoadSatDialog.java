@@ -171,7 +171,7 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
 		ciKey[2] = new ColumnInfo(BaseMessages.getString(PKG, "LoadSatDialog.ColumnInfo.Type"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { LoadSatMeta.ATTRIBUTE_NORMAL, 
-							LoadSatMeta.ATTRIBUTE_FK , LoadSatMeta.ATTRIBUTE_TEMPORAL });
+							LoadSatMeta.ATTRIBUTE_FK , LoadSatMeta.ATTRIBUTE_TEMPORAL, LoadSatMeta.ATTRIBUTE_META });
 		
 		// attach the tableFieldColumns List to the widget
 		tableFieldColumns.add(ciKey[0]);
@@ -441,10 +441,12 @@ public class LoadSatDialog extends BaseLoadDialog implements StepDialogInterface
 			inMeta.getCols()[i] = item.getText(1);
 			inMeta.getFields()[i] = item.getText(2);
 			String t = item.getText(3);
+
 			//Unknown category is default to Normal 
 			if (!(t.equals(LoadSatMeta.ATTRIBUTE_NORMAL)) &&
 					!(t.equals(LoadSatMeta.ATTRIBUTE_FK)) &&
-					!(t.equals(LoadSatMeta.ATTRIBUTE_TEMPORAL))){
+					!(t.equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)) &&
+					!(t.equals(LoadSatMeta.ATTRIBUTE_META))){
 				t = LoadSatMeta.ATTRIBUTE_NORMAL;
 			}
 			inMeta.getTypes()[i] = t;

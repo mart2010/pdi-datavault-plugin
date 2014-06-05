@@ -74,23 +74,15 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	// position of FromDate attribute in input row
 	public int posFromDateInRow = -1;
 
-	//position index of fields stored in BINARY in row stream (= null if none)
-	private int[] fieldsInBinary = null;
-	
-	// position of surrogate FK in fields mapping (same as lookupRowMeta)
-	public int posFk = -1;
-	// position of FromDate attribute in fields mapping (same as lookupRowMeta)
-	public int posFromDate = -1;
-
 	public Date toDateMaxFlag = null;
 
 	// to limit historical sat rows query ResultSet
 	// is using number of millisecond since epoch...
 	public long minDateBuffer = Long.MAX_VALUE;
 
-	// Values sorted as in the UI mapping entry
+	// Fields sorted as in UI mapping entry
 	private RowMetaInterface lookupRowMeta;
-	// Same values as lookup + additional one appended
+	// Same as lookup + optional fields (meta-attr, toDate, ..)
 	private RowMetaInterface insertRowMeta;
 	// optionally used by prepStmtUpdateSat
 	private RowMetaInterface updateToDateRowMeta;
@@ -103,9 +95,21 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	// Buffer storing original input rows
 	private List<Object[]> bufferRows;
 
-	// index of sat attribute fields position in row stream
+	// index of sat attribute fields position in row stream 
+	// excluding meta-attributes
 	private int[] satAttsRowIdx;
+	//only meta-attributes (pass-through) in row stream
+	private int[] satMetaAttsRowIdx;
 
+	// position of surrogate FK in satAttsRowIdx (same as lookupRowMeta)
+	public int posFk = -1;
+	// position of FromDate in satAttsRowIdx (same as lookupRowMeta)
+	public int posFromDate = -1;
+
+	//position index of fields stored in BINARY in row stream (= null if none)
+	private int[] fieldsInBinary = null;
+
+	
 	// hold buffer Sat rows as returned from prepStmtLookup query
 	private NavigableSet<SatRecord> bufferSatHistRows;
 
@@ -159,23 +163,49 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 	}
 
 	public void initSatAttsRowIdx(LoadSatMeta meta) throws KettleStepException {
-		satAttsRowIdx = new int[meta.getFields().length];
+		int nbAtt = 0;
+		int nbMetaAtt = 0;
 		int nbBinary = 0;
+		
 		for (int i = 0; i < meta.getFields().length; i++) {
-			satAttsRowIdx[i] = outputRowMeta.indexOfValue(meta.getFields()[i]);
-			if (satAttsRowIdx[i] < 0) {
+			int iv = outputRowMeta.indexOfValue(meta.getFields()[i]);
+			if (iv < 0) {
 				// couldn't find field!
 				throw new KettleStepException(BaseMessages.getString(PKG, "Load.Exception.FieldNotFound",
 						meta.getFields()[i]));
 			}
-			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_FK)) {
-				posFkInRow = outputRowMeta.indexOfValue(meta.getFields()[i]);
-			} else if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)) {
-				posFromDateInRow = outputRowMeta.indexOfValue(meta.getFields()[i]);
-			}
-			ValueMetaInterface val = outputRowMeta.getValueMeta(satAttsRowIdx[i]);
-			if (val.isStorageBinaryString()){
+			if (outputRowMeta.getValueMeta(iv).isStorageBinaryString()) {
 				nbBinary++;
+			}
+			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_META) ){
+				nbMetaAtt++;	
+			} else {
+				nbAtt++;
+			}
+		}
+		
+		satAttsRowIdx = new int[nbAtt];
+		if (nbMetaAtt > 0){
+			satMetaAttsRowIdx = new int[nbMetaAtt];
+		}
+		
+		nbMetaAtt = 0;
+		nbAtt = 0;
+		for (int i = 0; i < meta.getFields().length; i++) {
+			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_META) ){
+				satMetaAttsRowIdx[nbMetaAtt] = outputRowMeta.indexOfValue(meta.getFields()[i]);
+				nbMetaAtt++;	
+			} else {
+				//normal attributes (including FromDate & FK..)
+				satAttsRowIdx[nbAtt] = outputRowMeta.indexOfValue(meta.getFields()[i]);
+				if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_FK)) {
+					posFkInRow = outputRowMeta.indexOfValue(meta.getFields()[i]);
+					posFk = nbAtt;
+				} else if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)) {
+					posFromDateInRow = outputRowMeta.indexOfValue(meta.getFields()[i]);
+					posFromDate = nbAtt;
+				}	
+				nbAtt++;
 			}
 		}
 		
@@ -219,7 +249,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		 * reduce data transfer, only historical rows past a minimum time-point
 		 * are considered: ---> rows previous to and following <minimum
 		 * "FromDate"> read from input rows. This allows for non constant
-		 * "FromDate" in input rows.
+		 * "FromDate" in input rows.  We also exclude the meta-attributes.
 		 * 
 		 * Notes: 
 		 * 1) The second clause is simply ignored for non-temporal data.
@@ -238,19 +268,14 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		String cols = "";
 
 		for (int i = 0; i < meta.getCols().length; i++) {
-			cols += dbMeta.quoteField(meta.getCols()[i]);
-			if (i < meta.getCols().length - 1) {
-				cols += ", ";
+			//exclude meta-att from lookup
+			if (!meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_META)){
+				cols += dbMeta.quoteField(meta.getCols()[i]) + ", ";
+				int mtype = outputRowMeta.getValueMeta(outputRowMeta.indexOfValue(meta.getFields()[i])).getType();
+				lookupRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], mtype));
 			}
-			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_FK)) {
-				posFk = i;
-			}
-			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_TEMPORAL)) {
-				posFromDate = i;
-			}
-			int mtype = outputRowMeta.getValueMeta(satAttsRowIdx[i]).getType();
-			lookupRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], mtype));
 		}
+		cols = cols.substring(0, cols.lastIndexOf(","));
 
 		String sql = "SELECT " + cols + " FROM " + qualifiedSatTable + " Sat " + Const.CR;
 		String whereIn = "WHERE " + dbMeta.quoteField(meta.getFkColumn()) + " IN ( ";
@@ -295,22 +320,38 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		String param = " ( ";
 
 		// ***********************************************
-		// 1- Handle sat columns defined in Mapping UI
+		// 1- Handle sat columns defined in Mapping except Meta-attr
 		// ***********************************************
+		int ix = 0;
 		for (int i = 0; i < meta.getCols().length; i++) {
-			if (i < meta.getCols().length - 1) {
+			//exclude meta-att from lookup
+			if (!meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_META)){
 				cols += dbMeta.quoteField(meta.getCols()[i]) + ", ";
 				param += "?, ";
-			} else {
-				cols += dbMeta.quoteField(meta.getCols()[i]);
-				param += "?";
+				int t = outputRowMeta.getValueMeta(satAttsRowIdx[ix]).getType();
+				insertRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], t));
+				ix++;
 			}
-			int t = outputRowMeta.getValueMeta(satAttsRowIdx[i]).getType();
-			insertRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], t));
+		}
+		cols = cols.substring(0,cols.lastIndexOf(","));
+		param = param.substring(0, param.lastIndexOf(","));
+		
+		// ***********************************************
+		// 2- Handle OPTIONAL Meta-attr
+		// ***********************************************
+		ix = 0;
+		for (int i = 0; i < meta.getCols().length; i++) {
+			if (meta.getTypes()[i].equals(LoadSatMeta.ATTRIBUTE_META)){
+				cols += ", " + dbMeta.quoteField(meta.getCols()[i]);
+				param += ", ?";
+				int t = outputRowMeta.getValueMeta(satMetaAttsRowIdx[ix]).getType();
+				insertRowMeta.addValueMeta(new ValueMeta(meta.getCols()[i], t));
+				ix++;
+			}
 		}
 
 		// ***********************************************
-		// 2- Handle optional toDate
+		// 3- Handle OPTIONAL toDate
 		// ***********************************************
 		if (meta.isToDateColumnUsed()) {
 			SimpleDateFormat format = new SimpleDateFormat(LoadSatMeta.DATE_FORMAT);
@@ -326,7 +367,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 
 		// ***********************************************
-		// 3- Handle audit columns
+		// 4- Handle OPTIONAL audit columns
 		// ***********************************************
 		if (!Const.isEmpty(meta.getAuditDtsCol())) {
 			cols += ", " + db.getDatabaseMeta().quoteField(meta.getAuditDtsCol());
@@ -339,7 +380,6 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			param += ", ?";
 			insertRowMeta.addValueMeta(new ValueMetaString(meta.getAuditRecSourceCol()));
 		}
-
 		cols += " ) ";
 		param += " ) ";
 
@@ -358,9 +398,9 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		// do we need to Update Satellite?
 		if (meta.isToDateColumnUsed()) {
 			updateToDateRowMeta = new RowMeta();
-			updateToDateRowMeta.addValueMeta(lookupRowMeta.getValueMeta(posFromDate));
-			updateToDateRowMeta.addValueMeta(lookupRowMeta.getValueMeta(posFk));
-			updateToDateRowMeta.addValueMeta(lookupRowMeta.getValueMeta(posFromDate));
+			updateToDateRowMeta.addValueMeta(lookupRowMeta.getValueMeta(lookupRowMeta.indexOfValue(meta.getFromDateColumn())));
+			updateToDateRowMeta.addValueMeta(lookupRowMeta.getValueMeta(lookupRowMeta.indexOfValue(meta.getFkColumn())));
+			updateToDateRowMeta.addValueMeta(lookupRowMeta.getValueMeta(lookupRowMeta.indexOfValue(meta.getFromDateColumn())));
 
 			/*
 			 * UPDATE <sat_table> SET <toDate-col> = ? WHERE <surKey-col> = ?
@@ -385,7 +425,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			bufferRows.add(r);
 
 			// update the minimum date
-			// TODO: use java.util.Date for now, NOT SURE IF OK in all cases?
+			// using java.util.Date for now, should be OK for most cases
 			if (posFromDate != -1) {
 				java.util.Date d = (java.util.Date) r[satAttsRowIdx[posFromDate]];
 				if (minDateBuffer > d.getTime()) {
@@ -408,7 +448,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 			} catch (IndexOutOfBoundsException e) {
 				r = null;
 			}
-			Object key = (r != null) ? r[satAttsRowIdx[posFk]] : null;
+			Object key = (r != null) ? r[posFkInRow] : null;
 			db.setValue(prepStmtLookup, lookupRowMeta.getValueMeta(posFk), key, i + 1);
 		}
 		// final parameters (minDate) to limit historical sat rows
@@ -427,7 +467,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 
 		for (Object[] r : getLookupRows(rs, meta)) {
 			SatRecord v = new SatRecord(r, 0, lookupRowMeta.size(), posFk, posFromDate);
-			// flag records coming from DB
+			// flag record coming from DB as persisted
 			v.setAsPersisted();
 			// records from DB have integrity so no duplicates expected
 			if (!bufferSatHistRows.add(v)) {
@@ -455,18 +495,28 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 	}
 
-	public void addBatchInsert(LoadSatMeta meta, Object[] satRow, Object optionalToDate) throws KettleDatabaseException {
+	public void addBatchInsert(LoadSatMeta meta, SatRecord satRow, Object optionalToDate) throws KettleDatabaseException {
 
 		// ***********************************************
-		// 1- Handle sat columns defined in Mapping UI
+		// 1- Handle sat columns defined in Mapping UI except meta-attr
 		// ***********************************************
-		for (int i = 0; i < meta.getCols().length; i++) {
-			db.setValue(prepStmtInsertSat, insertRowMeta.getValueMeta(i), satRow[i], i + 1);
+		for (int i = 0; i < satAttsRowIdx.length; i++) {
+			db.setValue(prepStmtInsertSat, insertRowMeta.getValueMeta(i), satRow.getValues()[i], i + 1);
 		}
 
+		// ***********************************************
+		// 2- Handle OPTIONAL Meta-attr
+		// ***********************************************
+		if (satMetaAttsRowIdx != null) {
+			for (int i = 0; i < satMetaAttsRowIdx.length; i++) {
+				db.setValue(prepStmtInsertSat, 
+						insertRowMeta.getValueMeta(i + satAttsRowIdx.length), satRow.getMetaAtts()[i], i + satAttsRowIdx.length + 1);
+			}
+		}
+		
 		int idx;
 		// ***********************************************
-		// 2- Handle optional toDate
+		// 3- Handle optional toDate
 		// ***********************************************
 		if (meta.isToDateColumnUsed()) {
 			idx = insertRowMeta.indexOfValue(meta.getToDateColumn());
@@ -474,7 +524,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		}
 
 		// ***********************************************
-		// 3- Handle audit columns
+		// 4- Handle audit columns
 		// ***********************************************
 		if (!Const.isEmpty(meta.getAuditDtsCol())) {
 			idx = insertRowMeta.indexOfValue(meta.getAuditDtsCol());
@@ -489,7 +539,7 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 		try {
 			prepStmtInsertSat.addBatch();
 			if (log.isRowLevel()) {
-				log.logRowlevel("Adding batch values: " + Arrays.deepToString(satRow));
+				log.logRowlevel("Adding batch values: " + Arrays.deepToString(satRow.getValues()));
 			}
 		} catch (SQLException ex) {
 			throw new KettleDatabaseException("Error adding batch to Load Sat, rowMeta: "
@@ -559,6 +609,10 @@ public class LoadSatData extends BaseStepData implements StepDataInterface {
 
 	public int[] getSatAttsRowIdx() {
 		return satAttsRowIdx;
+	}
+	
+	public int[] getSatMetaAttsRowIdx() {
+		return satMetaAttsRowIdx;
 	}
 
 	public int[] getFieldsInBinary() {

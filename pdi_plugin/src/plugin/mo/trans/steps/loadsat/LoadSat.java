@@ -54,6 +54,7 @@ import plugin.mo.trans.steps.common.SatRecord;
  *      > can either ignore identical consecutive records (Idempotent) or load them as-is
  * 5) Attribute/Satellite table can also include a closing 'toDate' expire column
  * 
+ * 
  * Again, as with Load Hub and Sat, the strategy here is then to favor <b>batch</b> over multi-threading.  
  * So "# of copies to start.." should be 1 for these Steps. 
  *       
@@ -131,7 +132,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 		
 		/***** step-2 --> Add new records into bufferSatHistRows, ignore/send downstream duplicates ******
 		 *******          (guarantees sorting needed for Idempotent & for updating "toDate")        ******/
-		
 		Iterator<Object[]> iter = data.getBufferRows().iterator();
 		while (iter.hasNext()) {
 			Object[] bufferRow = iter.next();
@@ -142,9 +142,14 @@ public class LoadSat extends BaseStep implements StepInterface {
 				//ignore duplicate (e.g. dups in-stream, immutable attr..)
 				putRow(data.outputRowMeta, bufferRow);
 				iter.remove();
+			} else {
+				//attach any meta-attributes for new sat record
+				if (data.getSatMetaAttsRowIdx() != null){
+					newRow.setMetaAtts(bufferRow,data.getSatMetaAttsRowIdx());
+				}
 			}
 		}
-		// Finish when all buffer rows were duplicates 
+		// Exit if all buffer rows were duplicates 
 		if (data.getBufferRows().size() == 0) {
 			data.emptyBuffersAndClearPrepStmts();
 			if (!data.finishedAllRows) {
@@ -158,7 +163,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 		
 		
 		/***** step-3 --> When Idempotent remove new duplicates record ******/
-		
 		if (meta.isIdempotent()) {
 			Iterator<SatRecord> iterSat = data.getBufferSatHistRows().iterator();
 			while (iterSat.hasNext()) {
@@ -191,9 +195,8 @@ public class LoadSat extends BaseStep implements StepInterface {
 		
 
 		/***** step-4 --> Prepare Batch insert & Set ToDate if needed ******/
-		
-		//Some JDBC does not support simultaneous addBatch() on different prepareStmt 
-		//so must preserve params for sat updates
+		//JDBC may not support simultaneous addBatch() on different prepareStmt 
+		//so we store params for sat updates
 		List<Object[]> updateParams = null;
 		if (meta.isToDateColumnUsed()) {
 			updateParams = new ArrayList<Object[]>();
@@ -212,11 +215,11 @@ public class LoadSat extends BaseStep implements StepInterface {
 					optToDate = (nextRec == null) ? data.toDateMaxFlag : 
 						nextRec.getValues()[data.posFromDate];	
 				}
-				data.addBatchInsert(meta, rec.getValues(), optToDate);
+				data.addBatchInsert(meta, rec, optToDate);
 				insertCtn++;
 				incrementLinesOutput();
 			} else {
-			//for existing record now followed by a new one, add param to update (when)
+			//for existing record followed by a new one, add param to update (when needed)
 				if (meta.isToDateColumnUsed() && nextRec != null && !nextRec.isPersisted()){
 					updateParams.add(new Object[]{nextRec.getValues()[data.posFromDate] 
 							,rec.getTechkeyValue()
@@ -227,7 +230,6 @@ public class LoadSat extends BaseStep implements StepInterface {
 		
 
 		/***** step-5 --> Complete Stmt batch, commit and send rows ....   *****/
-		
 		if (insertCtn > 0){
 			//sat rows have "toDate" and require updates
 			boolean requireUpdate = (updateParams != null && updateParams.size() > 0); 

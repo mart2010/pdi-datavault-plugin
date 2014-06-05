@@ -56,9 +56,12 @@ public class SatRecord implements Comparable<SatRecord>{
 	//flag indicating if record is persisted or not in DB
 	private boolean persisted = false;
 	
+	// Meta attributes do not participate in sat record lifecycle 
+	// change of values will be ignored for existing sat record
+	private Object[] metaAtts;
 
 	/**
-	 * CConstruct a SatRow where techKey and FromDate are of type 
+	 * Construct a SatRow where techKey and FromDate are of type 
 	 * Long and any subtype of java.util.Date, respectively.  
 	 * 
 	 * This ensures values are correctly ordered in Sorted Collection. 
@@ -274,6 +277,17 @@ public class SatRecord implements Comparable<SatRecord>{
 
 	public void setAsPersisted() {
 		this.persisted = true;
+	}
+
+	public Object[] getMetaAtts() {
+		return metaAtts;
+	}
+
+	public void setMetaAtts(Object[] atts, int[] idx) {
+		metaAtts = new Object[idx.length];
+		for (int i = 0; i < idx.length; i++ ){
+			metaAtts[i] = atts[idx[i]];
+		}
 	}
 
 	@Override
