@@ -62,7 +62,7 @@ import plugin.dvloader.trans.steps.ui.LoadLinkDialog;
  *
  */
 @Step(id = "LoadLinkPlugin", name = "LoadLinkDialog.Shell.Title", description="LoadLinkDialog.Shell.Desc", 
-image = "link.png", i18nPackageName="plugin.mo.trans.steps.common", 
+image = "link.png", i18nPackageName="plugin.dvloader.trans.steps.common", 
 categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
 public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
 	public static String IDENTIFYING_KEY = "Relationship Key";

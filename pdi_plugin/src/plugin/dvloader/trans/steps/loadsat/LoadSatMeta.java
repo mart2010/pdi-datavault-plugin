@@ -58,7 +58,7 @@ import plugin.dvloader.trans.steps.ui.LoadSatDialog;
  * @author mouellet
  */
 @Step(id = "LoadSatAttPlugin", name = "LoadSatDialog.Shell.Title", description="LoadSatDialog.Shell.Desc", 
-image = "sat.png", 	i18nPackageName="plugin.mo.trans.steps.common", 
+image = "sat.png", 	i18nPackageName="plugin.dvloader.trans.steps.common", 
 categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
 public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	

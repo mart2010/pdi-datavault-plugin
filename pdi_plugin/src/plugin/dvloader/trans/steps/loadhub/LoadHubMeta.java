@@ -63,7 +63,7 @@ import plugin.dvloader.trans.steps.ui.LoadHubDialog;
  *
  */
 @Step(id = "LoadHubAnchorPlugin", name = "LoadHubDialog.Shell.Title", description="LoadHubDialog.Shell.Desc", 
-		image = "hub.png", 	i18nPackageName="plugin.mo.trans.steps.common", 
+		image = "hub.png", 	i18nPackageName="plugin.dvloader.trans.steps.common", 
 		categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
 public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 	public static String IDENTIFYING_KEY = "Business/Natural Key";
