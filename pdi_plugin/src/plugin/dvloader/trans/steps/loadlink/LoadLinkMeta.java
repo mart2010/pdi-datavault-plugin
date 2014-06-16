@@ -14,7 +14,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.loadhub;
+package plugin.dvloader.trans.steps.loadlink;
 
 import java.util.List;
 
@@ -49,28 +49,27 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import plugin.mo.trans.steps.common.BaseLoadHubLink;
-import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.common.LoadHubLinkData;
-import plugin.mo.trans.steps.loadsat.LoadSatMeta;
-import plugin.mo.trans.steps.ui.LoadHubDialog;
+import plugin.dvloader.trans.steps.common.BaseLoadHubLink;
+import plugin.dvloader.trans.steps.common.BaseLoadMeta;
+import plugin.dvloader.trans.steps.common.LoadHubLinkData;
+import plugin.dvloader.trans.steps.loadsat.LoadSatMeta;
+import plugin.dvloader.trans.steps.ui.LoadLinkDialog;
 
 /**
- * 
- * Meta class used for the Hub.
- * 
+ * Meta class used for Link.
+ *  
  * @author mouellet
  *
  */
-@Step(id = "LoadHubAnchorPlugin", name = "LoadHubDialog.Shell.Title", description="LoadHubDialog.Shell.Desc", 
-		image = "hub.png", 	i18nPackageName="plugin.mo.trans.steps.common", 
-		categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
-public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
-	public static String IDENTIFYING_KEY = "Business/Natural Key";
+@Step(id = "LoadLinkPlugin", name = "LoadLinkDialog.Shell.Title", description="LoadLinkDialog.Shell.Desc", 
+image = "link.png", i18nPackageName="plugin.mo.trans.steps.common", 
+categoryDescription="i18n:org.pentaho.di.trans.step:BaseStep.Category.Experimental")
+public class LoadLinkMeta extends BaseLoadMeta implements StepMetaInterface {
+	public static String IDENTIFYING_KEY = "Relationship Key";
 	public static String OTHER_TYPE = "Other Attribute";
 	
-
-	public LoadHubMeta() {
+	
+	public LoadLinkMeta() {
 		super();
 	}
 		
@@ -80,12 +79,10 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		return IDENTIFYING_KEY;
 	}
 
-
 	@Override
 	public String getOtherTypeString() {
 		return OTHER_TYPE;
 	}
-
 	
 	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
@@ -93,24 +90,26 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		return new BaseLoadHubLink(stepMeta, stepDataInterface, copyNr, transMeta, trans);
 	}
 
-	
 	@Override
 	public StepDataInterface getStepData() {
 		return new LoadHubLinkData(this.getLog());
 	}
 
 	public StepDialogInterface getDialog(Shell shell, StepMetaInterface meta, TransMeta transMeta, String name) {
-		return new LoadHubDialog(shell, meta, transMeta, name);
+		return new LoadLinkDialog(shell, meta, transMeta, name);
 	}
 
 	
 	@Override
 	public void setDefault() {
 		super.setDefault();
-		allocateKeyArray(1);
-		fields[0] = "key field-1";
-		cols[0] = "key column-1";
-		types[0] = IDENTIFYING_KEY;
+		int nrkeys = 2;
+		allocateKeyArray(nrkeys);
+		for (int i = 0; i < nrkeys; i++) {
+			fields[i] = "key field-" + (i+1);
+			cols[i] = "key column-" + (i+1);
+			types[i] = IDENTIFYING_KEY;
+		}
 	}
 
 	
@@ -152,11 +151,10 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			keyGeneration = XMLHandler.getTagValue(stepnode, "keyGeneration");
 			sequenceName = XMLHandler.getTagValue(stepnode, "sequenceName");
 		} catch (Exception e) {
-			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.LoadStepInfo"), e);
+			throw new KettleXMLException(BaseMessages.getString(PKG, "LoadLinkMeta.Exception.LoadStepInfo"), e);
 		}
 	}
 
-	
 	public void readRep(Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases)
 			throws KettleException {
 		try {
@@ -166,7 +164,7 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			sequenceName = rep.getStepAttributeString(id_step, "sequenceName");
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG,
-					"LoadHubMeta.Exception.ErrorReadingHubStepInfo"), e);
+					"LoadLinkMeta.Exception.ErrorReadingLinkStepInfo"), e);
 		}
 	}
 	
@@ -179,7 +177,7 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			rep.saveStepAttribute(id_transformation, id_step, "sequenceName", sequenceName);
 			
 		} catch (Exception e) {
-			throw new KettleException(BaseMessages.getString(PKG, "LoadHubMeta.Exception.UnableToSaveHubStepInfo")
+			throw new KettleException(BaseMessages.getString(PKG, "LoadLinkMeta.Exception.UnableToSaveLinkStepInfo")
 					+ id_step, e);
 		}
 	}
@@ -199,19 +197,21 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 			remarks.add(cr);
 		}
-		
-		int keyfound = 0;
+
+		int fkfound = 0;
 		for (int i = 0; i < cols.length; i++) {
-			if (types[i].equals(LoadHubMeta.IDENTIFYING_KEY)) {
-				keyfound++;
+			if (types[i].equals(LoadLinkMeta.IDENTIFYING_KEY)) {
+				fkfound++;
 			} 
 		}
-		if (keyfound == 0) {
-			error_message += BaseMessages.getString(PKG,
-					"LoadHubMeta.CheckResult.KeyFieldsIssues",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
+
+		if (fkfound < 2) {
+			error_message = BaseMessages.getString(PKG,
+					"LoadLinkMeta.CheckResult.KeyFieldsIssues",LoadSatMeta.ATTRIBUTE_FK) + Const.CR;
 			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
 			remarks.add(cr);
 		}
+		
 		if (keyGeneration != null) {
 				if (!(BaseLoadMeta.CREATION_METHOD_AUTOINC.equals(keyGeneration)
 						|| BaseLoadMeta.CREATION_METHOD_SEQUENCE.equals(keyGeneration) 
@@ -225,28 +225,25 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 	}	
 	
 	
-	
-	//useful to construct DDL reflecting UI configuration settings
+	//same method as LoadHubMeta (cannot be moved to super class, as Sat not share same logic)
 	@Override
 	public SQLStatement getSQLStatements(TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev,
 			Repository repository, IMetaStore metaStore) throws KettleStepException {
-		
+
 		SQLStatement retval = super.getSQLStatements(transMeta, stepMeta, prev, repository, metaStore);
 		if (retval.getError() != null){
 			return retval;
 		}
-		
+	
 		Database db = new Database(loggingObject, databaseMeta);
 		db.shareVariablesWith( transMeta );
 		LoadHubLinkData data = (LoadHubLinkData) getStepData();
 		data.db = db;
 		try {
 			db.connect();
-			
 			data.outputRowMeta = transMeta.getPrevStepFields( stepMeta.getName()).clone();
 			data.initRowIdx(this);
 			data.initPrepStmtInsert(this);
-			
 			
 			if (data.getInsertRowMeta() == null || data.getInsertRowMeta().size() < 1 ){
 				retval.setError( BaseMessages.getString( PKG, "LoadDialog.CheckResult.NoMapping" ) );
@@ -270,12 +267,12 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
             db.disconnect();
         }
 		return retval;
-
 	}
-
-
+	
+	
+	
 	public Object clone() {
-		LoadHubMeta retval = (LoadHubMeta) super.clone();
+		LoadLinkMeta retval = (LoadLinkMeta) super.clone();
 		int nr = fields.length;
 		retval.allocateKeyArray(nr);
 
@@ -288,5 +285,5 @@ public class LoadHubMeta extends BaseLoadMeta implements StepMetaInterface {
 		return retval;
 	}
 
-	
+		
 }

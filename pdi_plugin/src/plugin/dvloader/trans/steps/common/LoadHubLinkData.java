@@ -14,7 +14,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.common;
+package plugin.dvloader.trans.steps.common;
 
 import java.sql.BatchUpdateException;
 import java.sql.PreparedStatement;

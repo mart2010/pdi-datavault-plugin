@@ -15,7 +15,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.common;
+package plugin.dvloader.trans.steps.common;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

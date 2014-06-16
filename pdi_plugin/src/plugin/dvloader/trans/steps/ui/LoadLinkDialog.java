@@ -14,7 +14,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.ui;
+package plugin.dvloader.trans.steps.ui;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,16 +71,16 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
-import plugin.mo.trans.steps.common.BaseLoadDialog;
-import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.loadhub.LoadHubMeta;
+import plugin.dvloader.trans.steps.common.BaseLoadDialog;
+import plugin.dvloader.trans.steps.common.BaseLoadMeta;
+import plugin.dvloader.trans.steps.loadlink.LoadLinkMeta;
 
 /**
- * Load Hub dialog
- * 
- * @author mouellet
+ * Load Link dialog
+ *  @author mouellet
  */
-public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface {
+
+public class LoadLinkDialog extends BaseLoadDialog implements StepDialogInterface {
 
 	private Label wlTechKey;
 	private CCombo wTechKey;
@@ -100,19 +100,20 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 	private Label wlKey;
 	private TableView wKey;
 
-	public LoadHubDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
+
+	public LoadLinkDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 	}
 
 	/*
 	 * Constructing all Dialog widgets Return the (possibly new) name of the
-	 * step. If it returns null, Kettle assumes the dialog was cancelled
+	 * step. If it returns null, Kettle assumes that the dialog was cancelled
 	 * (done by Cancel handler).
 	 */
 	public String open() {
 		String t = super.open();
-		shell.setText(BaseMessages.getString(PKG, "LoadHubDialog.Shell.Title"));
-
+		
+		shell.setText(BaseMessages.getString(PKG, "LoadLinkDialog.Shell.Title"));
 
 		// Stepname line
 		wlStepname.setText(BaseMessages.getString(PKG, "LoadDialog.Stepname.Label"));
@@ -133,48 +134,49 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		wlSchema.setText(BaseMessages.getString(PKG, "LoadDialog.TargetSchema.Label"));
 
 		// Table line...
-		wlTargetTable.setText(BaseMessages.getString(PKG, "LoadHubDialog.Target.Label"));
+		wlTargetTable.setText(BaseMessages.getString(PKG, "LoadLinkDialog.Target.Label"));
 
-		// Batch size ...
-		
+		// Batch size ... 
+
+
 		//
 		// The fields: keys + none-keys
 		//
 		wlKey = new Label(shell, SWT.NONE);
-		wlKey.setText(BaseMessages.getString(PKG, "LoadHubDialog.Keyfields.Label"));
+		wlKey.setText(BaseMessages.getString(PKG, "LoadLinkDialog.Keyfields.Label"));
 		props.setLook(wlKey);
 		FormData fdlKey = new FormData();
 		fdlKey.left = new FormAttachment(0, 0);
-		fdlKey.top = new FormAttachment(wBatchSize, margin * 2);
+		fdlKey.top = new FormAttachment(wBatchSize, margin*2);
 		fdlKey.right = new FormAttachment(100, 0);
 		wlKey.setLayoutData(fdlKey);
 
 		int nrKeyCols = 3;
-		int nrKeyRows = (inputMeta.getFields() != null ? inputMeta.getFields().length : 1);
+		int nrKeyRows = (inputMeta.getFields() != null ? inputMeta.getFields().length : 2);
 
-		ciKey = new ColumnInfo[nrKeyCols];
-		ciKey[0] = new ColumnInfo(BaseMessages.getString(PKG, "LoadHubDialog.ColumnInfo.TableColumn"),
+		ciKey = new ColumnInfo[nrKeyCols];		
+		ciKey[0] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.TableColumn"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
-		ciKey[1] = new ColumnInfo(BaseMessages.getString(PKG, "LoadHubDialog.ColumnInfo.FieldInStream"),
+		ciKey[1] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.FieldInStream"),
 				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
 		ciKey[2] = new ColumnInfo(BaseMessages.getString(PKG, "LoadLinkDialog.ColumnInfo.FieldType"),
-				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { LoadHubMeta.IDENTIFYING_KEY, LoadHubMeta.OTHER_TYPE },
-				false);
+				ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { LoadLinkMeta.IDENTIFYING_KEY, LoadLinkMeta.OTHER_TYPE }, false);
+		
 		// attach the tableFieldColumns List to the widget
 		tableFieldColumns.add(ciKey[0]);
 		wKey = new TableView(transMeta, shell, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL
 				| SWT.H_SCROLL, ciKey, nrKeyRows, lsMod, props);
 
-
-		// The Key Creation Group
-		Group gKeyCreationFields = new Group(shell, SWT.SHADOW_ETCHED_IN);
-		gKeyCreationFields.setText(BaseMessages.getString(PKG, "LoadDialog.KeyGenGroupFields.Label"));
-
+		
+		// The Key Creation Group 
+		Group gKeyCreationFields = new Group( shell, SWT.SHADOW_ETCHED_IN ); 
+		gKeyCreationFields.setText( BaseMessages.getString( PKG, "LoadDialog.KeyGenGroupFields.Label" ) );
+	    
 		FormLayout keyGroupLayout = new FormLayout();
-		keyGroupLayout.marginWidth = 3;
-		keyGroupLayout.marginHeight = 3;
-		gKeyCreationFields.setLayout(keyGroupLayout);
-		props.setLook(gKeyCreationFields);
+	    keyGroupLayout.marginWidth = 3;
+	    keyGroupLayout.marginHeight = 3;
+	    gKeyCreationFields.setLayout( keyGroupLayout );
+	    props.setLook( gKeyCreationFields );
 
 		// Tech/surr key column:
 		wlTechKey = new Label(gKeyCreationFields, SWT.RIGHT);
@@ -196,20 +198,19 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		fdTk.right = new FormAttachment(100, 0);
 		wTechKey.setLayoutData(fdTk);
 		wTechKey.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent arg0) {
-			}
-
+			public void focusLost(FocusEvent arg0) {}
 			public void focusGained(FocusEvent arg0) {
 				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
 				shell.setCursor(busy);
-				setColumnsCombo(wTechKey, ValueMetaInterface.TYPE_INTEGER, -1);
+				setColumnsCombo(wTechKey, ValueMetaInterface.TYPE_INTEGER,-1);
 				shell.setCursor(null);
 				busy.dispose();
 			}
 		});
 
-		// Creation of surrogate key
-		Group gSurrGroup = new Group(gKeyCreationFields, SWT.SHADOW_ETCHED_IN);
+   
+		// Key generation method Group
+	    Group gSurrGroup = new Group(gKeyCreationFields, SWT.SHADOW_ETCHED_IN);
 		gSurrGroup.setText(BaseMessages.getString(PKG, "LoadDialog.SurrGroup.Label"));
 		GridLayout gridLayout = new GridLayout(3, false);
 		gSurrGroup.setLayout(gridLayout);
@@ -218,7 +219,7 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		fdSurrGroup.top = new FormAttachment(wTechKey, margin);
 		fdSurrGroup.right = new FormAttachment(100, 0);
 		gSurrGroup.setBackground(shell.getBackground());
-
+		
 		gSurrGroup.setLayoutData(fdSurrGroup);
 
 		// Use maximum of table + 1
@@ -248,7 +249,7 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		props.setLook(wlSeqButton);
 		GridData gdlSeqButton = new GridData();
 		wlSeqButton.setLayoutData(gdlSeqButton);
-
+				
 		wSeq = new Text(gSurrGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
 		props.setLook(wSeq);
 		wSeq.addModifyListener(lsMod);
@@ -256,14 +257,12 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		wSeq.setLayoutData(gdSeq);
 		wSeq.addFocusListener(new FocusListener() {
 			public void focusGained(FocusEvent arg0) {
-				inputMeta.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_SEQUENCE);
+				inputMeta.setKeyGeneration(LoadLinkMeta.CREATION_METHOD_SEQUENCE);
 				wSeqButton.setSelection(true);
 				wAutoinc.setSelection(false);
 				wTableMax.setSelection(false);
 			}
-
-			public void focusLost(FocusEvent arg0) {
-			}
+			public void focusLost(FocusEvent arg0) {}
 		});
 
 		// Use an auto-increment field?
@@ -282,15 +281,15 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		setTableMax();
 		setSequence();
 		setAutoincUse();
+		
+		//Fixing Key Creation Group 
+	    FormData fdKeyGroup = new FormData();
+	    fdKeyGroup.left = new FormAttachment( 0, 0 );
+	    fdKeyGroup.right = new FormAttachment( 100, 0 );
+	    fdKeyGroup.bottom = new FormAttachment( wAuditFields, -margin );
+	    gKeyCreationFields.setLayoutData( fdKeyGroup );
 
-		// Fixing Key Creation Group
-		FormData fdKeyGroup = new FormData();
-		fdKeyGroup.left = new FormAttachment(0, 0);
-		fdKeyGroup.right = new FormAttachment(100, 0);
-		fdKeyGroup.bottom = new FormAttachment(wAuditFields, -margin);
-		gKeyCreationFields.setLayoutData(fdKeyGroup);
-
-		// to fix the Mapping Grid
+		// fixing the Mapping Grid
 		FormData fdKey = new FormData();
 		fdKey.left = new FormAttachment(0, 0);
 		fdKey.top = new FormAttachment(wlKey, margin);
@@ -316,19 +315,18 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 				}
 			}
 		};
-		new Thread(runnable).start();		
+		new Thread(runnable).start();
 	
-		
 		wSeq.addSelectionListener(lsDef);
 		wTechKey.addSelectionListener(lsDef);
-
+		
 		getData();
 		setTableFieldCombo();
 		inputMeta.setChanged(backupChanged);
-	
+			
 		// Set the shell size, based upon previous time...
 		setSize();
-		
+
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
@@ -337,6 +335,7 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		}
 		return stepname;
 	}
+
 
 	public void setAutoincUse() {
 		boolean enable = (dbMeta == null) || dbMeta.supportsAutoinc();
@@ -372,7 +371,6 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 	 */
 	public void getData() {
 		super.getData();
-		
 		if (inputMeta.getFields() != null) {
 			for (int i = 0; i < inputMeta.getFields().length; i++) {
 				TableItem item = wKey.table.getItem(i);
@@ -385,6 +383,7 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 				if (inputMeta.getTypes()[i] != null) {
 					item.setText(3, inputMeta.getTypes()[i]);
 				}
+
 			}
 		}
 
@@ -419,12 +418,11 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 
 
 	protected void sql() {
-		LoadHubMeta metaH = new LoadHubMeta();
+		LoadLinkMeta metaH = new LoadLinkMeta();
 		getInfo(metaH);
 
 		try {
 			SQLStatement sql = metaH.getSQLStatements(transMeta, stepMeta, null, repository, metaStore);
-			
 			if (!sql.hasError()) {
 				if (sql.hasSQL()) {
 					SQLEditor sqledit = new SQLEditor(transMeta, shell, SWT.NONE, metaH.getDatabaseMeta(),
@@ -448,6 +446,8 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		}
 	}
 
+	
+	
 	/*
 	 * Update the Meta object according to UI widgets
 	 */
@@ -455,16 +455,16 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		super.getInfo(in);
 		in.setTechKeyCol(wTechKey.getText());
 
-		int nrkeys = wKey.nrNonEmpty();
-		in.allocateKeyArray(nrkeys);
-
-		for (int i = 0; i < nrkeys; i++) {
+		int nb = wKey.nrNonEmpty();
+		in.allocateKeyArray(nb);
+		
+		for (int i = 0; i < nb; i++) {
 			TableItem item = wKey.getNonEmpty(i);
 			in.getCols()[i] = item.getText(1);
 			in.getFields()[i] = item.getText(2);
 			in.getTypes()[i] = item.getText(3);
 		}
-
+		
 		if (wAutoinc.getSelection()) {
 			in.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_AUTOINC);
 		} else if (wSeqButton.getSelection()) {
@@ -473,7 +473,7 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 		} else { // TableMax
 			in.setKeyGeneration(BaseLoadMeta.CREATION_METHOD_TABLEMAX);
 		}
-
+		
 	}
 
 	protected void getFieldsFromInput() {
@@ -483,7 +483,7 @@ public class LoadHubDialog extends BaseLoadDialog implements StepDialogInterface
 				BaseStepDialog.getFieldsFromPrevious(r, wKey, 2, new int[] { 2 }, new int[] {}, -1, -1,
 						new TableItemInsertListener() {
 							public boolean tableItemInserted(TableItem tableItem, ValueMetaInterface v) {
-								tableItem.setText(3, LoadHubMeta.IDENTIFYING_KEY);
+								tableItem.setText(3, LoadLinkMeta.IDENTIFYING_KEY);
 								return true;
 							}
 						});

@@ -14,7 +14,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.loadsat;
+package plugin.dvloader.trans.steps.loadsat;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -49,8 +49,8 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.ui.LoadSatDialog;
+import plugin.dvloader.trans.steps.common.BaseLoadMeta;
+import plugin.dvloader.trans.steps.ui.LoadSatDialog;
 
 /**
  * Meta class used for Satellite.

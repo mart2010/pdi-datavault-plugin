@@ -14,7 +14,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.ui;
+package plugin.dvloader.trans.steps.ui;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,9 +70,9 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.di.ui.trans.step.TableItemInsertListener;
 
-import plugin.mo.trans.steps.common.BaseLoadDialog;
-import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.loadsat.LoadSatMeta;
+import plugin.dvloader.trans.steps.common.BaseLoadDialog;
+import plugin.dvloader.trans.steps.common.BaseLoadMeta;
+import plugin.dvloader.trans.steps.loadsat.LoadSatMeta;
 
 /**
  * 

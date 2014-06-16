@@ -14,7 +14,7 @@
  * Copyright (c) 2014 Martin Ouellet
  *
  */
-package plugin.mo.trans.steps.loadsat;
+package plugin.dvloader.trans.steps.loadsat;
 
 import java.sql.BatchUpdateException;
 import java.sql.PreparedStatement;
@@ -46,8 +46,8 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-import plugin.mo.trans.steps.common.BaseLoadMeta;
-import plugin.mo.trans.steps.common.SatRecord;
+import plugin.dvloader.trans.steps.common.BaseLoadMeta;
+import plugin.dvloader.trans.steps.common.SatRecord;
 
 /**
  * 

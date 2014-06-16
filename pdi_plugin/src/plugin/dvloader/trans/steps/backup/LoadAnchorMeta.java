@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package plugin.mo.trans.steps.backup;
+package plugin.dvloader.trans.steps.backup;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import plugin.mo.trans.steps.ui.LoadHubDialog;
+import plugin.dvloader.trans.steps.ui.LoadHubDialog;
 
 /**
  * 
