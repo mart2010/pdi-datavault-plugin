@@ -111,8 +111,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	/*
-	 * This handles common info, specific is implemented by subclass
-	 * picking up returned String... 
+	 * This reads common info, specific is implemented by subclass 
 	 */
 	public String getXML() throws KettleException {
 		StringBuffer retval = new StringBuffer(512);
@@ -139,7 +138,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	/*
-	 * This handles common info, specific is implemented by subclass 
+	 * This saves common info, specific is implemented by subclass
 	 */
 	public void saveRep(Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step)
 			throws KettleException {
@@ -168,7 +167,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	/*
-	 * This handles common info, specific is implemented by subclass 
+	 * This reads common info, specific is implemented by subclass 
 	 */
 	protected void readData(Node stepnode, List<? extends SharedObjectInterface> databases) throws KettleXMLException {
 		try {
@@ -178,7 +177,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 			targetTable = XMLHandler.getTagValue(stepnode, "targetTable");
 			String bSize;
 			bSize = XMLHandler.getTagValue(stepnode, "batchSize");
-			bufferSize = Const.toInt(bSize, 0);
+			bufferSize = Const.toInt(bSize, MIN_BUFFER_SIZE);
 			
 			Node keys = XMLHandler.getSubNode(stepnode, "fields");
 			int nrkeys = XMLHandler.countNodes(keys, "key");
@@ -199,7 +198,7 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	}
 
 	/*
-	 * This handles common info, specific is implemented by subclass 
+	 * This reads common info, specific is implemented by subclass 
 	 */
 	public void readRep(Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases)
 			throws KettleException {
@@ -364,9 +363,8 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 
 	
 	/*
-	 * TODO: verify if we need overriding equals() 
-	 * most Steps do not do this!
-	 * 
+	 * Equals based on Target schema + name. 
+	 * Not sure whether it is necessary here 
 	 */
 	public boolean equals(Object other) {
 		if (other == this) {
@@ -427,8 +425,9 @@ public abstract class BaseLoadMeta extends BaseStepMeta implements StepMetaInter
 	public void setBufferSize(int bSize) {
 		if (bSize < BaseLoadMeta.MIN_BUFFER_SIZE) {
 			bufferSize = BaseLoadMeta.MIN_BUFFER_SIZE;
+		} else {
+			bufferSize = bSize ;	
 		}
-		bufferSize = bSize ;
 	}
 	
 

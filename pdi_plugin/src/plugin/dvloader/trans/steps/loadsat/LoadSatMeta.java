@@ -88,8 +88,6 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	private boolean isIdempotent;
 	
 	
-	
-	
 	public LoadSatMeta() {
 		super();
 	}
@@ -170,7 +168,7 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 			updateFkAndFromDate();
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG,
-					"LoadSatMeta.Exception.ErrorReadingLinkStepInfo"), e);
+					"LoadSatMeta.Exception.ErrorReadingSatStepInfo"), e);
 		}
 	}
 
@@ -182,7 +180,7 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 			rep.saveStepAttribute(id_transformation, id_step, "toDateColumn", toDateColumn);
 			rep.saveStepAttribute(id_transformation, id_step, "toDateMaxFlag", toDateMaxFlag);
 		} catch (Exception e) {
-			throw new KettleException(BaseMessages.getString(PKG, "LoadSatMeta.Exception.UnableToSaveLinkStepInfo")
+			throw new KettleException(BaseMessages.getString(PKG, "LoadSatMeta.Exception.UnableToSaveSatStepInfo")
 					+ id_step, e);
 		}
 	}
@@ -323,11 +321,11 @@ public class LoadSatMeta extends BaseLoadMeta implements StepMetaInterface {
 	}
 	
 	
-	//not used with LoadLinkMeta
+	//not used here
 	public String getIdKeyTypeString() {
 		return null;
 	}
-	//not used with LoadLinkMeta
+	//not used here
 	public String getOtherTypeString() {
 		return null;
 	}

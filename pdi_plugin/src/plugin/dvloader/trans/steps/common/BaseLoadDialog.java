@@ -112,6 +112,7 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 	protected ModifyListener lsMod;
 	protected Group wAuditFields;
 	protected Display display;
+
 	/**
 	 * List of ColumnInfo that should have the field names of the selected
 	 * database table
@@ -141,8 +142,6 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 		formLayout.marginHeight = Const.FORM_MARGIN;
 
 		shell.setLayout(formLayout);
-		shell.setText(BaseMessages.getString(PKG, "LoadLinkDialog.Shell.Title"));
-
 		middle = props.getMiddlePct();
 		margin = Const.MARGIN;
 
@@ -164,6 +163,7 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 			}
 		};
 		backupChanged = inputMeta.hasChanged();
+		
 		dbMeta = inputMeta.getDatabaseMeta();
 
 		// Stepname line
@@ -191,7 +191,6 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 		if (inputMeta.getDatabaseMeta() == null && transMeta.nrDatabases() == 1) {
 			wConnection.select(0);
 		}
-		wConnection.addModifyListener(lsMod);
 		wConnection.addSelectionListener(lsSelection);
 		
 
@@ -540,7 +539,6 @@ public abstract class BaseLoadDialog extends BaseStepDialog implements StepDialo
 		}
 	}
 
-	
 	protected void getSchemaNames() {
 		DatabaseMeta databaseMeta = transMeta.findDatabase(wConnection.getText());
 		if (databaseMeta != null) {
