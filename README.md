@@ -11,4 +11,5 @@ With these custom Steps, you can:
   * Adjust buffer size to fine-tune performance
 
 
-Please refer to <PDI Plugin> (TODO: link to description from blog) for more details.
+Please refer to [ETL plugins for DataVault] (http://martin-ouellet.blogspot.ch/2014/03/etl-plugins-for-data-vault.html) for more details.
+
